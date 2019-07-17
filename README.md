@@ -1,4 +1,4 @@
-ESPNOW mesh usb adapter for esp32/esp2866
+ESPNOW mesh usb adapter for esp32/esp2866/esp01
 
 Dependencies:
 - https://github.com/arttupii/espNowAESBroadcast
@@ -63,3 +63,8 @@ Dependencies:
 <RTC GET;
 >ACK 243495;
 ```
+#### Test setup
+ESP2866, ESP01 and ESP32(usb)
+![Test setup](https://raw.githubusercontent.com/arttupii/EspNowUsb/master/testSetup.png)
+
+
