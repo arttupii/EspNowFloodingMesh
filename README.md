@@ -1,8 +1,8 @@
 Espnow mesh usb adapter for esp32/esp2866
 
 Dependencies:
-https://github.com/arttupii/espNowAESBroadcast
-https://github.com/arttupii/ArduinoCommands
+- https://github.com/arttupii/espNowAESBroadcast
+- https://github.com/arttupii/ArduinoCommands
 
 
 #### Example messages
