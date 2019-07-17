@@ -15,10 +15,21 @@ void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt) {
 void setup() {
   Serial.begin(115200);
   cmd.begin(Serial);
-
+  delay(1000);
   //Set device in AP mode to begin with
   espNowAESBroadcast_RecvCB(espNowAESBroadcastRecv);
 
+  espNowAESBroadcast_ErrorDebugCB([](int level, const char *str) {
+    if(level==0){
+      cmd.send("ERROR", str);
+    }
+    if(level==1){
+      cmd.send("WRN", str);
+    }
+    if(level==2){
+      cmd.send("DBG", str);
+    }
+  });
   cmd.send("READY");
 }
 
@@ -43,7 +54,8 @@ void loop() {
       }
     } else if (strcmp(cmdName, "ROLE") == 0) {
       if (strcmp(p1, "MASTER") == 0) {
-        espNowAESBroadcast_setToMasterRole(true);
+        int ttl = p2==NULL?0:atoi(p2);
+        espNowAESBroadcast_setToMasterRole(true, ttl);
         cmd.send("ACK");
       } else   if (strcmp(p1, "SLAVE") == 0) {
         espNowAESBroadcast_setToMasterRole(false);
@@ -64,7 +76,7 @@ void loop() {
         ttl = atoi(p1);
       }
       uint32_t replyptr = espNowAESBroadcast_sendAndHandleReply((uint8_t*)binary, size, ttl, NULL);
-      sprintf(buf,"%lu",replyptr);
+      sprintf(buf, "%lu", replyptr);
       cmd.send("ACK", buf);
     } else if (strcmp(cmdName, "STOP") == 0) {
       espNowAESBroadcast_end();
@@ -82,14 +94,14 @@ void loop() {
       } else {
         cmd.send("NACK", "REBOOT NEEDED");
       }
-    }else if (strcmp(cmdName, "RTC") == 0) {
-      if (strcmp(p1, "GET")==0) {
+    } else if (strcmp(cmdName, "RTC") == 0) {
+      if (strcmp(p1, "GET") == 0) {
         time_t t = espNowAESBroadcast_getRTCTime();
-        sprintf(buf,"%lu", t);
+        sprintf(buf, "%lu", t);
         cmd.send("ACK", buf);
-      }else if (strcmp(p1, "SET")==0) {
+      } else if (strcmp(p1, "SET") == 0) {
         time_t t;
-        sscanf(p2,"%lu", &t);
+        sscanf(p2, "%lu", &t);
         espNowAESBroadcast_setRTCTime(t);
         cmd.send("ACK");
       } else {
