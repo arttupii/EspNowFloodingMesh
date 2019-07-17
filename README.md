@@ -8,6 +8,7 @@ Dependencies:
 #### Example messages
 ##### Initialize mesh network
 ```
+<READY;
 >ROLE MASTER;
 <ACK;
 >KEY SET [00,11,22,33,44,55,66,77,88,99,AA,BB,CC,DD,EE,FF];
@@ -31,7 +32,7 @@ Dependencies:
 ##### Request with ttl 3 (nodes/node send/sends reply with 2314 replyId)
 ```
 >REQ 3 [11,22,33,44,55,66]
->ACK 2314
+<ACK 2314
 ```
 
 ##### Message received
@@ -41,15 +42,15 @@ Dependencies:
 ##### Request with ttl 3 (nodes/node send/sends reply with 2314 replyId)
 ```
 >REQ 3 [11,22,33,44,55,66]
->ACK 2314
+<ACK 2314
 ```
 ##### Message received with replyId
 ```
-REC 2314 [53,4C,41,56,45,20,48,45,4C,4C,4F,20,4D,45,53,53,41,47,45,0];
+>REC 2314 [53,4C,41,56,45,20,48,45,4C,4C,4F,20,4D,45,53,53,41,47,45,0];
 ```
 ##### Invalid command
 ```
->ABCD;
-<NACK INVALID COMMAND
+<ABCD;
+>NACK INVALID COMMAND
 ```
 
