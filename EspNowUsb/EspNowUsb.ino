@@ -27,7 +27,7 @@ void setup() {
       cmd.send("WRN", str);
     }
     if(level==2){
-      cmd.send("DBG", str);
+      Serial.("DBG", str);
     }
   });
   cmd.send("READY");
