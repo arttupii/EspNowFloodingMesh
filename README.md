@@ -56,7 +56,7 @@ Dependencies:
 ##### RTC time SET command (EPOC)
 ```
 <RTC SET 23456;
->ACK;
+>ACK 23456;
 ```
 ##### RTC time GET command (EPOC)
 ```
