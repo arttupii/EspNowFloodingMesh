@@ -63,3 +63,8 @@ Dependencies:
 <RTC GET;
 >ACK 243495;
 ```
+#### Test setup
+ESP2866, ESP01 and ESP32(usb)
+![Test setup](https://raw.githubusercontent.com/arttupii/EspNowUsb/master/testSetup.png)
+
+
