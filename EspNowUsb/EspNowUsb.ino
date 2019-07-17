@@ -9,7 +9,11 @@ unsigned char secredKey[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x8
 void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   char replyPrtStr[10];
   sprintf(replyPrtStr, "%lu", replyPrt);
-  cmd.send("REC", replyPrtStr, data, len); //Handle invalid command
+  if(replyPrtStr) {
+    cmd.send("REC", replyPrtStr, data, len); //Handle invalid command
+  } else {
+    cmd.send("REC", data, len); //Handle invalid command
+  }
 }
 
 void setup() {
@@ -27,7 +31,7 @@ void setup() {
       cmd.send("WRN", str);
     }
     if(level==2){
-      Serial.("DBG", str);
+      cmd.send("INFO", str);
     }
   });
   cmd.send("READY");
