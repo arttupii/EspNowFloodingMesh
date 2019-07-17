@@ -18,6 +18,12 @@ Dependencies:
 >INIT;
 <ACK;
 ```
+##### Set ttl value for SYNC_TIME messages
+```
+<READY;
+>ROLE MASTER 3;
+<ACK;
+```
 ##### Reboot usb adapter
 ```
 >REBOOT;
@@ -26,13 +32,13 @@ Dependencies:
 ```
 ##### Send message with ttl 3
 ```
->SEND 3 [11,22,33,44,55,66]
-<ACK
+>SEND 3 [11,22,33,44,55,66];
+<ACK;
 ```
 ##### Request with ttl 3 (nodes/node will send reply with 2314 replyId)
 ```
->REQ 3 [11,22,33,44,55,66]
-<ACK 2314
+>REQ 3 [11,22,33,44,55,66];
+<ACK 2314;
 ```
 ##### Reply received with 2314 replyId
 ```
@@ -45,6 +51,15 @@ Dependencies:
 ##### Invalid command
 ```
 <ABCD;
->NACK INVALID COMMAND
+>NACK INVALID COMMAND;
 ```
-
+##### RTC time SET command (EPOC)
+```
+<RTC SET 23456;
+>ACK;
+```
+##### RTC time GET command (EPOC)
+```
+<RTC GET;
+>ACK 243495;
+```
