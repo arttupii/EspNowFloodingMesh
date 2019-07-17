@@ -82,6 +82,19 @@ void loop() {
       } else {
         cmd.send("NACK", "REBOOT NEEDED");
       }
+    }else if (strcmp(cmdName, "RTC") == 0) {
+      if (strcmp(p1, "GET")==0) {
+        time_t t = espNowAESBroadcast_getRTCTime();
+        sprintf(buf,"%lu", t);
+        cmd.send("ACK", buf);
+      }else if (strcmp(p1, "SET")==0) {
+        time_t t;
+        sscanf(p2,"%lu", &t);
+        espNowAESBroadcast_setRTCTime(t);
+        cmd.send("ACK");
+      } else {
+        cmd.send("NACK", "INVALID PARAMETER");
+      }
     } else if (strcmp(cmdName, "KEY") == 0) {
       if (strcmp(p1, "SET") == 0) {
         if (size == sizeof(secredKey)) {
