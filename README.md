@@ -13,14 +13,15 @@ ESPNOW mesh usb adapter for esp32/esp2866/esp01 and nodejs server code
      V
 +----+--------+
 | RaspberryPi |
-|             |                       +----------------------------------+
-|             |                       | ESPNOW mesh network              |
-+-----+-------+                       |                          Node6   |
-      ^                               |  Node1        Node3              |
-      |      Serial Port              +------------+   Node3     Node5   |
+|             |                    +-------------------------------------+
+|             |                    |    ESPNOW mesh network              |
++-----+-------+                    |                             Node6   |
+      ^                            |     Node1        Node3              |
+      |      Serial Port           |  +------------+   Node3     Node5   |
       +------------------------------>| USBAdapter |           Node4     |
-                                      | Master     |  NodeX              |
-                                      +------------+---------------------+
+                                   |  | Master     |  NodeX              |
+                                   |  +------------+                     |
+                                   +-------------------------------------+
 ```               
 Dependencies:
 - https://github.com/arttupii/espNowAESBroadcast
