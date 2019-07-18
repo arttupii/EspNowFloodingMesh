@@ -1,5 +1,22 @@
 ESPNOW mesh usb adapter for esp32/esp2866/esp01 and nodejs server code
 
+Features:
+- Mesh nodes use MQTT service (supscribe/publish)
+- Master node (USBAdapter=ESP32 or ESP2866) is connected to RaspberryPi via USB
+- Maximum number of slave nodes: unlimited
+- Flooding mesh support
+- ESP32, ESP2866, ESP01
+
+Software for MasterNode
+https://github.com/arttupii/EspNowUsb/tree/master/EspNowUsb
+
+Software for slaveNodes
+https://github.com/arttupii/EspNowUsb/tree/master/arduinoSlaveNode/main
+
+Sofware for RaspberryPi
+https://github.com/arttupii/EspNowUsb/tree/master/RaspberryPiServer
+
+
 ```
  ____________________________________
 (                                    )
@@ -28,7 +45,7 @@ Dependencies:
 - https://github.com/arttupii/ArduinoCommands
 
 
-#### Example messages
+#### Example messages (USBAdapter)
 ##### Initialize mesh network
 ```
 <READY;
