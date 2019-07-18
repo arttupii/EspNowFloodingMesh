@@ -71,7 +71,7 @@ ESP2866, ESP01 and ESP32(usb)
 
 #### Nodejs-server example. 
 Nodejs-server configures usb-adapter and receives some messages from mesh
-'''javascript
+```javascript
 const Promise = require('bluebird');
 const si = require('./serialInterface');
 
@@ -119,11 +119,10 @@ Promise.delay(1000)
 .catch(function(e){
 console.info(e);
 });
-
-'''
+```
 #####Log output
 ```
-arttu@labra:~/git/EspNowUsb/RaspberryPiServer$ node index.js 
+a@labra:~/git/EspNowUsb/RaspberryPiServer$ node index.js 
 [ 'REC', '3623206401', 'ddd', [ 80, 79, 76, 79, 0 ], '' ]
 begin /dev/ttyUSB1 115200
 reboot
@@ -144,6 +143,6 @@ Received 1 replies
 Received: [83,76,65,86,69,40,69,83,80,48,49,41,32,72,69,76,76,79,32,77,69,83,83,65,71,69,0]
 Received: [83,76,65,86,69,40,69,83,80,48,49,41,32,72,69,76,76,79,32,77,69,83,83,65,71,69,0]
 ^C
-arttu@labra:~/git/EspNowUsb/RaspberryPiServer$ 
+a@labra:~/git/EspNowUsb/RaspberryPiServer$ 
 ```
 
