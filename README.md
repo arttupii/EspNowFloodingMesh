@@ -166,7 +166,7 @@ void loop() {
   delay(10);
 }
 ```
-#####Log output
+#####Server log output
 ```
 a@labra:~/git/EspNowUsb/RaspberryPiServer$ node index.js 
 begin /dev/ttyUSB1 115200
