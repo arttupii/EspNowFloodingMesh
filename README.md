@@ -123,7 +123,6 @@ console.info(e);
 #####Log output
 ```
 a@labra:~/git/EspNowUsb/RaspberryPiServer$ node index.js 
-[ 'REC', '3623206401', 'ddd', [ 80, 79, 76, 79, 0 ], '' ]
 begin /dev/ttyUSB1 115200
 reboot
 Ping
