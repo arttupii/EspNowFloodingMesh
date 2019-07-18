@@ -1,5 +1,28 @@
-ESPNOW mesh usb adapter for esp32/esp2866/esp01
+ESPNOW mesh usb adapter for esp32/esp2866/esp01 and nodejs server code
 
+```
+ ____________________________________
+(                                    )
+|                                    |
+(            Internet                )
+|                                    |
+(____________________________________)
+     ^
+     | 
+     | 
+     V
++----+--------+
+| RaspberryPi |
+|             |                    +-------------------------------------+
+| MQTT        |                    |    ESPNOW mesh network              |
++-----+-------+                    |                             Node6   |
+      ^                            |     Node1        Node3              |
+      |      Serial Port           |  +------------+   Node3     Node5   |
+      +------------------------------>| USBAdapter |           Node4     |
+                                   |  | Master     |  NodeX              |
+                                   |  +------------+                     |
+                                   +-------------------------------------+
+```               
 Dependencies:
 - https://github.com/arttupii/espNowAESBroadcast
 - https://github.com/arttupii/ArduinoCommands
@@ -71,7 +94,7 @@ ESP2866, ESP01 and ESP32(usb)
 
 #### Nodejs-server example. 
 Nodejs-server configures usb-adapter and receives some messages from mesh
-'''javascript
+```javascript
 const Promise = require('bluebird');
 const si = require('./serialInterface');
 
@@ -119,12 +142,56 @@ Promise.delay(1000)
 .catch(function(e){
 console.info(e);
 });
-
-'''
-#####Log output
 ```
-arttu@labra:~/git/EspNowUsb/RaspberryPiServer$ node index.js 
-[ 'REC', '3623206401', 'ddd', [ 80, 79, 76, 79, 0 ], '' ]
+Slave node code
+```c++
+#include <EspNowAESBroadcast.h>
+
+#define ESP_NOW_CHANNEL 1
+//AES 128bit
+unsigned char secredKey[] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE, 0xFF};
+
+void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt){
+  if(len>0) {
+    if(replyPrt) { //Reply asked. Send reply
+        char m[]="POLO";
+        Serial.println((char*)data); //Print MARCO
+        Serial.println("POLO");
+        espNowAESBroadcast_sendReply((uint8_t*)m, sizeof(m), 0/*ttl*/, replyPrt);
+        Serial.println(replyPrt);
+    } else {
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  //Set device in AP mode to begin with
+  espNowAESBroadcast_RecvCB(espNowAESBroadcastRecv);
+  espNowAESBroadcast_secredkey(secredKey);
+  espNowAESBroadcast_begin(ESP_NOW_CHANNEL);
+  
+  espNowAESBroadcast_requestInstantTimeSyncFromMaster();
+  while (espNowAESBroadcast_isSyncedWithMaster() == false);
+}
+
+void loop() {
+  espNowAESBroadcast_loop();
+  delay(10);
+
+  static unsigned long m = millis();
+  if(m+5000<millis()) {
+    char message[] = "SLAVE(ESP01) HELLO MESSAGE";
+    espNowAESBroadcast_send((uint8_t*)message, sizeof(message));
+    m = millis();
+  }
+  espNowAESBroadcast_loop();
+  delay(10);
+}
+```
+#####Server log output
+```
+a@labra:~/git/EspNowUsb/RaspberryPiServer$ node index.js 
 begin /dev/ttyUSB1 115200
 reboot
 Ping
@@ -144,6 +211,6 @@ Received 1 replies
 Received: [83,76,65,86,69,40,69,83,80,48,49,41,32,72,69,76,76,79,32,77,69,83,83,65,71,69,0]
 Received: [83,76,65,86,69,40,69,83,80,48,49,41,32,72,69,76,76,79,32,77,69,83,83,65,71,69,0]
 ^C
-arttu@labra:~/git/EspNowUsb/RaspberryPiServer$ 
+a@labra:~/git/EspNowUsb/RaspberryPiServer$ 
 ```
 
