@@ -9,11 +9,7 @@ unsigned char secredKey[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x8
 void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   char replyPrtStr[10];
   sprintf(replyPrtStr, "%lu", replyPrt);
-  if(replyPrt>0) {
-    cmd.send("REC", replyPrtStr, data, len); 
-  } else {
-    cmd.send("REC", data, len); 
-  }
+  cmd.send("REC", replyPrtStr, data, len); 
 }
 
 void setup() {
@@ -43,15 +39,17 @@ bool initialized = false;
 
 void loop() {
   espNowAESBroadcast_loop();
-  delay(10);
+  delay(1);
 
   cmd.handleInputCommands([](const char* cmdName, const char*p1, const char*p2, const char*p3, const unsigned char*binary, int size) {
 
-    if (strcmp(cmdName, "CHANNEL") == 0) {
-      if (strcmp(cmdName, "SET") == 0) {
+    if (strcmp(cmdName, "PING") == 0) {
+      cmd.send("ACK");
+    } else if (strcmp(cmdName, "CHANNEL") == 0) {
+      if (strcmp(p1, "SET") == 0) {
         channel = atoi(p2);
         cmd.send("ACK", itoa(channel, buf, 10));
-      } else if (strcmp(cmdName, "GET") == 0) {
+      } else if (strcmp(p1, "GET") == 0) {
         cmd.send("ACK", itoa(channel, buf, 10));
       } else {
         cmd.send("NACK", "PARAM");
@@ -89,6 +87,7 @@ void loop() {
       cmd.send("ACK", "Rebooting");
       Serial.flush();
       ESP.restart();
+      while(1);
     } else if (strcmp(cmdName, "INIT") == 0) {
       if (initialized == false) {
         initialized = true;
