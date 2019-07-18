@@ -6,14 +6,13 @@ const cmdParser = require('./parser');
 const si = require('./serialInterface');
 const _ = require("underscore");
 const parser = new Readline()
-
 var callback;
 
 var port;
 function begin(portName, baudRate=115200) {
     port = new SerialPort(portName, { "baudRate": baudRate });
     port.pipe(parser);
-console.info("begin", portName, baudRate);
+    console.info("begin", portName, baudRate);
 }
 
 var replyIdDB = {};
@@ -42,7 +41,7 @@ parser.on('data', function(line){
 });
 
 function waitAckNack() {
-    if(actNackCallback) {   
+    if(actNackCallback) {
 actNackCallback();
     }
     return new Promise(function(resolve){
@@ -50,24 +49,49 @@ actNackCallback();
     });
 }
 
-function ping() {
-    console.info("Ping");
+var waitList=[];
+function mutex(m){
+  if(m){
+    var p = new Promise(function(r){
+        waitList.push(r);
+        if(waitList.length===1) {
+          r();
+        }
+    });
+    return p;
+  } else {
+    waitList.shift();
+    if(waitList.length) {
+      waitList[0]();
+    }
+  }
+}
 
-    var ret = new Promise(function(resolve, reject){
-        return waitAckNack()
-        .then(function(p){
-            if(p[0]==="ACK") {
-                resolve();
-            } {
-               reject("PING FAILED");
-            }
+function ping() {
+
+    return mutex(true).then(function(done){
+            console.info("Ping");
+            var ret = new Promise(function(resolve, reject){
+                return waitAckNack()
+                .then(function(p){
+                    if(p[0]==="ACK") {
+                        resolve();
+                    } {
+                       reject("PING FAILED");
+                    }
+                });
+            }).timeout(
+            1000, "Ping operation timed out");
+            port.write('PING;\n')
+            return ret.then(function(){
+              mutex(false);
+        }).error(function(e){
+            return Promise.reject(e);
         });
-    }).timeout(
-    1000, "Ping operation timed out");
-    port.write('PING;\n')
-    return ret;
+    });
 }
 function init() {
+    return mutex(true).then(function(done){
     console.info("Init");
     port.write('INIT;')
     return new Promise(function(resolve, reject){
@@ -78,11 +102,17 @@ function init() {
             } {
                reject("INIT FAILED");
             }
-        });
-    }).timeout(
-    1000, "Init operation timed out");
+        })
+      }).timeout(
+    1000, "Init operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+    });
 }
 function role(role, ttl) {
+    return mutex(true).then(function(done){
     if(role=="master") {
         role="MASTER";
     } else {
@@ -99,11 +129,17 @@ function role(role, ttl) {
             } {
                reject("ROLE FAILED");
             }
-        });
-    }).timeout(
-    1000, "Role operation timed out");
+        })
+      }).timeout(
+    1000, "Role operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
 }
 function setChannel(c) {
+    return mutex(true).then(function(done){
     console.info("Channel %d;", c);
 
     port.write("CHANNEL SET " +  c + ";")
@@ -115,11 +151,17 @@ function setChannel(c) {
             } {
                reject("CHANNEL FAILED");
             }
-        });
-    }).timeout(
-    1000, "Channel operation timed out");
+        })
+      }).timeout(
+    1000, "Channel operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
 }
 function reboot() {
+    return mutex(true).then(function(done){
     console.info("reboot");
 
     port.write("REBOOT;");
@@ -132,10 +174,16 @@ function reboot() {
                reject("REBOOT FAILED");
             }
         });
-    }).timeout(
-    1000, "Reboot operation timed out");
+      }).timeout(
+    1000, "Reboot operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
 }
 function setKey(key) {
+    return mutex(true).then(function(done){
     console.info("key %j", key);
 
     if(key.length!==16) return Promise.reject("Invalid key size");
@@ -153,8 +201,13 @@ function setKey(key) {
                reject("KEY FAILED");
             }
         });
-    }).timeout(
-    1000, "Key operation timed out");
+      }).timeout(
+    1000, "Key operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
 }
 
 function convertToBinaryArray(a){
@@ -166,14 +219,18 @@ function convertToBinaryArray(a){
     if(Array.isArray(a)){
         return f(a);
     } else {
-        return f(a.toString().split(""));
+        return f(_.map(a.toString().split(""), function(a){
+          return a.charCodeAt(0);
+        })) + ",0";
     }
 }
 
 function send(message, ttl=0) {
-    console.info("send ttl=%d, %j", ttl, message);
+    return mutex(true).then(function(){
+    var j = convertToBinaryArray(message);
+    console.info("send ttl=%d, %s", ttl, j);
 
-    port.write("SEND " + ttl +" [" + convertToBinaryArray(message) +"];");
+    port.write("SEND " + ttl +" [" + j +"];");
     return new Promise(function(resolve, reject){
         return waitAckNack()
         .then(function(p){
@@ -183,11 +240,18 @@ function send(message, ttl=0) {
                reject("SEND FAILED");
             }
         });
-    }).timeout(
-    1000, "Send operation timed out");
+      }).timeout(
+    1000, "Send operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
 }
 
 function request(message, ttl=0, timeout=3000) {
+    var ret;
+    return mutex(true).then(function(){
     console.info("request ttl=%d, %j", ttl, message);
     var replyId;
     port.write("REQ " + ttl +" [" + convertToBinaryArray(message) +"];");
@@ -205,13 +269,18 @@ function request(message, ttl=0, timeout=3000) {
     }).timeout(
     timeout)
     .error(function(e) {
-        var ret = replyIdDB[replyId];
+        mutex(false);
+        ret = replyIdDB[replyId];
+        console.info("AAAAAAAAAAAAAAAAAAA", ret);
         delete replyIdDB[replyId];
-        return ret;
     });
+}).then(function(){
+  return ret;
+})
 }
 
 function getRTC(message) {
+    return mutex(true).then(function(done){
     console.info("RTC GET");
 
     port.write("RTC GET;");
@@ -224,11 +293,17 @@ function getRTC(message) {
                reject("RTC GET FAILED");
             }
         });
-    }).timeout(
-    1000, "RTC GET operation timed out");
+      }).timeout(
+    1000, "RTC GET operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
 }
 
 function setRTC(epoch) {
+    return mutex(true).then(function(done){
     epoch = parseInt(epoch);
     console.info("RTC %d", epoch);
 
@@ -242,8 +317,13 @@ function setRTC(epoch) {
                reject("RTC SET FAILED");
             }
         });
-    }).timeout(
-    1000, "RTC SET operation timed out");
+      }).timeout(
+    1000, "RTC SET operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
 }
 
 module.exports.begin = begin;
@@ -261,10 +341,3 @@ module.exports.setRTC = setRTC;
 
 module.exports.send = send;
 module.exports.req = request;
-
-
-
-
-
-
-
