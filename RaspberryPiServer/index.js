@@ -5,16 +5,16 @@ var simpleMqtt=require("./simpleMqtt");
 const config = require("./config.js")
 
 si.begin(config.usbPort);
-si.receiveCallback(function(data){
+si.receiveCallback(function(replyId, data){
     console.info("Received: %j", data);
-    simpleMqtt.parse(data);
+    simpleMqtt.parse(si, replyId, data);
 });
 
 function setup() {
   setInterval(function(){
       var epoch = (new Date).getTime()/1000;
       si.setRTC(epoch);
-   }, 60*1000);
+   }, 5*60*1000);
 
   return Promise.delay(1000)
   .then(function(){

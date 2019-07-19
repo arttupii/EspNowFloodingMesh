@@ -24,19 +24,27 @@ client.on('message', function (topic, message) {
   }).join("");
 
   var msg = "MQTT\nM:"+shortTopic+":"+v+"\n";
-  console.info("---------->",msg);
-  si.send(msg, config.mesh.ttl);
-  //client.end()
-})
+  var tryCnt=3;
+  function send() {
+    return si.req(msg, config.mesh.ttl)
+    .error(function (e) {
+      console.info("No reply from node...");
+      tryCnt--;
+      if(tryCnt>0) {
+        console.info("Try again...");
+        return send();
+      }
+    });
+  }
+  send();
+});
 
-function parse(data) {
+function parse(simpleMqtt, replyId, data) {
   var str = _.map(data,function(c){
     return String.fromCharCode(c);
   }).join("");
 
   if(str.indexOf("MQTT")===0){
-    console.info("1111111",str);
-
     _.each(str.split("\n"), function(c){
       if(c.indexOf("S:")===0||c.indexOf("P:")===0) {
         var s = c.split(":");
@@ -50,11 +58,12 @@ function parse(data) {
         }
       }
   });
+  if(parseInt(replyId)>0) {
+    //Ack required
+    console.info("MQTT: Ack requested by client...")
+    si.reply("ACK", replyId, config.mesh.ttl);
+  }
 }
 }
-/*var t = "MQTT\nP:device1/led/value:on\nP:device2/led/value:on\n".split("");
-t = _.map(t,function(c){
-  return c.charCodeAt(0);
-});
-parse(t)*/
+
 module.exports.parse=parse;

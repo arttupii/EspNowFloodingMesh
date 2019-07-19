@@ -4,7 +4,7 @@
 #include<string>
 class SimpleMQTT {
     public:
-        SimpleMQTT();
+        SimpleMQTT(int ttl);
         ~SimpleMQTT();
         void setDeviceName(const char *name);
         bool publishI(const char* parameterName, long long value);
@@ -12,23 +12,25 @@ class SimpleMQTT {
         bool publishB(const char* parameterName, bool value);
         bool publishS(const char* parameterName, const char *value);
 
-        bool subscribe(const char* parameterName);
-        bool subscribeUri(const char* devName, const char *valName);
-        void parse(const unsigned char *data, int size);
+        bool subscribeTopic(const char* devName, const char *valName);
+        void parse(const unsigned char *data, int size, uint32_t replyId);
         const char* getBuffer();
 
         void handleSubscribe(void (*cb)(const char *, const char* ));
-        void handleSend(void (*cb)(const char *, int));
 
+        bool compareTopic(const char* topic, const char* deviceName, const char* t);
     private:
         const char *deviceName;
         char buffer[100];
-        void (*subscribeCallBack)(const char *uri, const char* value);
-        void (*sendCallBack)(const char *data, int len);
+        uint32_t replyId;
+        
+        void (*subscribeCallBack)(const char *topic, const char* value);
         
         void parse2(const char *c,int l);
+        bool send(const char *mqttMsg, int len, uint32_t replyId);
 
-        std::vector<char*> uriVector;
-        void addUriToVector(char *uri);
+        std::vector<char*> topicVector;
+        void addtopicToVector(char *topic);
+        int ttl;
 };
 #endif

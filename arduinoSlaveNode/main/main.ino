@@ -1,77 +1,87 @@
 #include <EspNowAESBroadcast.h>
 #include"SimpleMqtt.h"
 
+/********NODE SETUP********/
 #define ESP_NOW_CHANNEL 1
-//AES 128bit
-unsigned char secredKey[] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE, 0xFF};
-SimpleMQTT simpleMqtt;
+unsigned char secredKey[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+const char deviceName[] = "device1";
+const int ttl = 3;
 
+#define LED 1 /*LED pin*/
+#define BUTTON_PIN 0
+/*****************************/
 
-void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt){
-  if(len>0) {
-    if(replyPrt) { //Reply asked. Send reply
-      
-    } else {
-     
-    }
-    simpleMqtt.parse(data, len);
+SimpleMQTT simpleMqtt = SimpleMQTT(ttl);
+
+void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt) {
+  if (len > 0) {
+    simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
   }
 }
 
 void setup() {
   Serial.begin(115200);
-  simpleMqtt.setDeviceName("device1"); //set unique name for node device!!!
-  
+  simpleMqtt.setDeviceName(deviceName); //set unique name for node device!!! It is like a ip address
+
+  pinMode(LED, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+
   //Set device in AP mode to begin with
   espNowAESBroadcast_RecvCB(espNowAESBroadcastRecv);
   espNowAESBroadcast_secredkey(secredKey);
-  espNowAESBroadcast_setToMasterRole(false, 3/*ttl*/);
-      
+  espNowAESBroadcast_setToMasterRole(false, ttl);
   espNowAESBroadcast_begin(ESP_NOW_CHANNEL);
 
-  simpleMqtt.handleSend([](const char *mqttMsg, int len){
-     espNowAESBroadcast_send((uint8_t*)mqttMsg, len, 3); //Send MQTT commands via mesh network
+  espNowAESBroadcast_ErrorDebugCB([](int level, const char *str) {
+    Serial.print(level); Serial.println(str); //If you want print some debug prints
   });
 
-  espNowAESBroadcast_requestInstantTimeSyncFromMaster();
-  while (espNowAESBroadcast_isSyncedWithMaster() == false); //Wait sync with master
+
+  if (!espNowAESBroadcast_syncWithMasterAndWait()) {
+    //Sync failed??? No connection to master????
+    Serial.println("No connection to master!!! Reboot");
+    ESP.restart();
+  }
+
+  //Handle MQTT events from master
+  simpleMqtt.handleSubscribe([](const char *topic, const char* value) {
+    if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) { //Check, is topic /device1/led/set
+      if (strcmp("on", value) == 0) { //check value and set led
+        setLed(true);
+      }
+      if (strcmp("off", value) == 0) {
+        setLed(false);
+      }
+    }
+  });
   
-  bool success = simpleMqtt.subscribe("led"); //Subscribe own led state from MQTT server device1/led/set
+  bool success = simpleMqtt.subscribeTopic(deviceName,"led/set"); //Subscribe own led state from MQTT server device1/led/set
+  success = simpleMqtt.subscribeTopic(deviceName,"led/value"); //Subscribe own led state from MQTT server device1/led/set
 }
 
-bool ledOn=false;
+bool buttonStatechange = false;
 
-void setLedOn(){
-  ledOn=true;
-  simpleMqtt.publishS("led", "on");
-  Serial.println("LED ON");
-}
-void setLedOff(){
-  ledOn=false;
-  simpleMqtt.publishS("led", "off");
-  Serial.println("LED OFF");
+void setLed(bool on) {
+  if(!simpleMqtt.publishS("led", on?"on":"off")) { //Send mqtt topic device1/led/value off
+    Serial.println("Publish failed... Reboot"); //No connection to master
+    ESP.restart();
+  }
+  Serial.println(on?"LED ON":"LED OFF");
+  digitalWrite(LED, on?HIGH:LOW);
 }
 
 void loop() {
   espNowAESBroadcast_loop();
-  simpleMqtt.handleSubscribe([](const char *uri, const char* value){
-    if(strcmp("device1/led/set", uri)==0) {
-      if(strcmp("on", value)==0) {
-        setLedOn();
-      }
-      if(strcmp("off", value)==0) {
-        setLedOff();
-      }
-     
-    }
-  });
-  delay(10);
 
-  int c = Serial.read();
-  if(c == '1' && ledOn==false) {
-    setLedOn();
+  int p = Serial.read();//digitalRead(BUTTON_PIN);
+
+  if (p == '0' && buttonStatechange == false) {
+    buttonStatechange = true;
+    setLed(true);
   }
-  if(c == '0' && ledOn==true) {
-    setLedOff();
+  if (p == '1' && buttonStatechange == true) {
+    buttonStatechange = false;
+    setLed(false);
   }
+  delay(10);
 }
