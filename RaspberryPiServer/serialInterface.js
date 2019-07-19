@@ -29,12 +29,14 @@ parser.on('data', function(line){
     if(parameters[0]==="REC"){
         if(parameters[1]==0) {
             //Normal message
-            callback(parameters[2]);
+            callback(0,parameters[2]);
         } else {
             //Reply message
             var replyId = parameters[1];
             if(replyIdDB.hasOwnProperty(replyId)) {
-                replyIdDB[replyId].push(parameters[2]);
+                replyIdDB[replyId].add(parameters[2]);
+            } else {
+              callback(replyId,parameters[2]);
             }
         }
     }
@@ -249,19 +251,59 @@ function send(message, ttl=0) {
 });
 }
 
-function request(message, ttl=0, timeout=3000) {
+function reply(message, replyPrt, ttl=0) {
+    return mutex(true).then(function(){
+    var j = convertToBinaryArray(message);
+    console.info("send ttl=%d, %s", ttl, j);
+
+    port.write("REPLY " + ttl + " " + +replyPrt + " [" + j +"];");
+    return new Promise(function(resolve, reject){
+        return waitAckNack()
+        .then(function(p){
+            if(p[0]==="ACK") {
+                resolve();
+            } {
+               reject("SEND FAILED");
+            }
+        });
+      }).timeout(
+    1000, "Reply operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
+}
+
+function request(message, ttl=0, timeout=3000, replyCount=1) {
     var ret;
     return mutex(true).then(function(){
     console.info("request ttl=%d, %j", ttl, message);
     var replyId;
     port.write("REQ " + ttl +" [" + convertToBinaryArray(message) +"];");
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        waitAckNack()
+        .error(function(){})
+        .then(function(r){
+          mutex(false);
+          return r;
+        })
         .then(function(p){
+          replyId = p[1];
+
             if(p[0]==="ACK") {
-                replyIdDB[p[1]] = [];
-                replyId = p[1];
-                console.info("Wait all Replies: replyId: " + p[1]);
+                replyIdDB[replyId] = {
+                  data: [],
+                  add: function(a){
+                    this.data.push(a);
+                    replyCount--;
+                    ret = this.data;
+                    if(replyCount<=0){
+                      resolve(this.data);
+                    }
+                  }
+                };
+                console.info("Wait all Replies with replyId: " + p[1]);
             } else {
                reject("SEND FAILED");
             }
@@ -269,14 +311,13 @@ function request(message, ttl=0, timeout=3000) {
     }).timeout(
     timeout)
     .error(function(e) {
-        mutex(false);
-        ret = replyIdDB[replyId];
-        console.info("AAAAAAAAAAAAAAAAAAA", ret);
-        delete replyIdDB[replyId];
-    });
+      console.info("Timeout", e);
+    }).then(function(){
+      console.info("Request handled");
+  });
 }).then(function(){
   return ret;
-})
+});
 }
 
 function getRTC(message) {
@@ -341,3 +382,4 @@ module.exports.setRTC = setRTC;
 
 module.exports.send = send;
 module.exports.req = request;
+module.exports.reply = reply;
