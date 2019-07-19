@@ -15,13 +15,14 @@ SimpleMQTT simpleMqtt = SimpleMQTT(ttl);
 
 void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   if (len > 0) {
+    Serial.println("********************************************************************");
+    Serial.println(replyPrt);
     simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
   }
 }
 
 void setup() {
   Serial.begin(115200);
-  simpleMqtt.setDeviceName(deviceName); //set unique name for node device!!! It is like a ip address
 
   pinMode(LED, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
@@ -44,31 +45,41 @@ void setup() {
   }
 
   //Handle MQTT events from master
-  simpleMqtt.handleSubscribe([](const char *topic, const char* value) {
-    if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) { //Check, is topic /device1/led/set
+  simpleMqtt.handleSubscribeEvents([](const char *topic, const char* value) {
+    if (simpleMqtt.compareTopic(topic, deviceName, "/led/value")) { //subscribed  initial value for led.
       if (strcmp("on", value) == 0) { //check value and set led
-        setLed(true);
+        digitalWrite(LED,HIGH);
+        Serial.println("Init: Set Led ON");
       }
       if (strcmp("off", value) == 0) {
-        setLed(false);
+        digitalWrite(LED,HIGH);
+        Serial.println("Init: Set Led OFF");
       }
     }
   });
   
-  bool success = simpleMqtt.subscribeTopic(deviceName,"led/set"); //Subscribe own led state from MQTT server device1/led/set
-  success = simpleMqtt.subscribeTopic(deviceName,"led/value"); //Subscribe own led state from MQTT server device1/led/set
+  //Handle MQTT events from master
+  simpleMqtt.handlePublishEvents([](const char *topic, const char* value) {
+    if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) { //Trigger topic,  /device1/led/set
+      if (strcmp("on", value) == 0) { //check value and set led
+        Serial.println("Set LED ON");
+        digitalWrite(LED, HIGH);
+      }
+      if (strcmp("off", value) == 0) {
+        Serial.println("Set LED OFF");
+        digitalWrite(LED, LOW);
+      }
+      if(!simpleMqtt.publish(deviceName, "/led/value", value)) { 
+        Serial.println("Publish failed... Reboot"); 
+        ESP.restart();
+      }
+    }
+  });
+  bool success = simpleMqtt.subscribeTopic(deviceName,"/led/set"); //Subscribe own led state from MQTT server device1/led/set
+  success = simpleMqtt.subscribeTopic(deviceName,"/led/value"); //Subscribe own led state from MQTT server device1/led/set
 }
 
 bool buttonStatechange = false;
-
-void setLed(bool on) {
-  if(!simpleMqtt.publishS("led", on?"on":"off")) { //Send mqtt topic device1/led/value off
-    Serial.println("Publish failed... Reboot"); //No connection to master
-    ESP.restart();
-  }
-  Serial.println(on?"LED ON":"LED OFF");
-  digitalWrite(LED, on?HIGH:LOW);
-}
 
 void loop() {
   espNowAESBroadcast_loop();
@@ -77,11 +88,13 @@ void loop() {
 
   if (p == '0' && buttonStatechange == false) {
     buttonStatechange = true;
-    setLed(true);
+    simpleMqtt.publish(deviceName, "/led/value", "on");
+    digitalWrite(LED,HIGH);
   }
   if (p == '1' && buttonStatechange == true) {
     buttonStatechange = false;
-    setLed(false);
+    simpleMqtt.publish(deviceName, "/led/value", "off");
+    digitalWrite(LED,LOW);
   }
   delay(10);
 }

@@ -6,18 +6,16 @@ class SimpleMQTT {
     public:
         SimpleMQTT(int ttl);
         ~SimpleMQTT();
-        void setDeviceName(const char *name);
-        bool publishI(const char* parameterName, long long value);
-        bool publishF(const char* parameterName, float value);
-        bool publishB(const char* parameterName, bool value);
-        bool publishS(const char* parameterName, const char *value);
-
+        bool publish(const char* deviceName, const char* parameterName, const char *value);
+                
         bool subscribeTopic(const char* devName, const char *valName);
-        void parse(const unsigned char *data, int size, uint32_t replyId);
+        
+        void parse(const unsigned char *data, int size, uint32_t replyId, bool subscribeSequance=false);
         const char* getBuffer();
 
-        void handleSubscribe(void (*cb)(const char *, const char* ));
-
+        void handleSubscribeEvents(void (*cb)(const char *, const char*));
+        void handlePublishEvents(void (*cb)(const char *, const char*));
+        
         bool compareTopic(const char* topic, const char* deviceName, const char* t);
     private:
         const char *deviceName;
@@ -25,8 +23,9 @@ class SimpleMQTT {
         uint32_t replyId;
         
         void (*subscribeCallBack)(const char *topic, const char* value);
-        
-        void parse2(const char *c,int l);
+        void (*publishCallBack)(const char *topic, const char* value); 
+               
+        void parse2(const char *c,int l, bool subscribeSequance);
         bool send(const char *mqttMsg, int len, uint32_t replyId);
 
         std::vector<char*> topicVector;
