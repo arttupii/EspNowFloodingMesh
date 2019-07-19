@@ -1,6 +1,9 @@
 # EspNow flooding mesh
 
-ESPNOW mesh usb adapter for esp32/esp2866/esp01. +nodejs server and slave node codes
+Includes:
+- ESPNOW mesh usb adapter codes for esp32/esp2866. 
+- Mesh gateway codes (Convert messages between mesh and MQTT broker)
+- Slave node codes (esp32/esp2866/esp01)
 
 ##### Features:
 - Mesh nodes use MQTT service (subscribe/publish)
@@ -15,22 +18,23 @@ ESPNOW mesh usb adapter for esp32/esp2866/esp01. +nodejs server and slave node c
 - Nearly instant connection after poweron
 - AES128
 - Retransmission support
-- Send and request reply support
+- Request/Reply support
 - Send and pray support (Send a message to all nodes without reply/ack)
 - Easy to configure
 - Simple mqqt interface
 - Works on esp-now broadcast
+- Arduino
 
 ###### Demo video
 - https://youtu.be/tXgNWhqPE14
 
-###### Software for master Node
+###### Mesh usb adapter
 - https://github.com/arttupii/EspNowUsb/tree/master/EspNowUsb
 
-###### Software for slave Nodes
+###### Mesh slave node codes
 - https://github.com/arttupii/EspNowUsb/tree/master/arduinoSlaveNode/main
 
-###### Sofware for RaspberryPi (conversation between mesh and mqtt broker)
+###### MeshGateway software for RaspberryPi (conversation between mesh and mqtt broker)
  - https://github.com/arttupii/EspNowUsb/tree/master/RaspberryPiServer (needs MQTT broker)
  - See config.js file (https://github.com/arttupii/EspNowUsb/blob/master/RaspberryPiServer/config.js)
 ```
@@ -47,19 +51,19 @@ ESPNOW mesh usb adapter for esp32/esp2866/esp01. +nodejs server and slave node c
 (            Internet                )
 |                                    |
 (____________________________________)
-     ^
-     |
-     |
-     V
-+----+--------+
-| RaspberryPi |
-|             |                    +-------------------------------------+
-| MQTT        |                    |    ESPNOW mesh network              |
-+-----+-------+                    |                             Node6   |
+                     ^
+                     |MQTT
+                     |
++--------------------|-------+
+| RaspberryPi        V       |
+|-------------+   +--+-------|
+| MeshGateway |<->| MQTT     |     +-------------------------------------+
+|             |   | broker   |     |    ESPNOW mesh network              |
++-----+-------+---+----------+     |                             Node6   |
       ^                            |     Node1        Node3              |
-      |      Serial Port           |  +------------+   Node3     Node5   |
+      |    USB(SerialData)         |  +------------+   Node3     Node5   |
       +------------------------------>| USBAdapter |           Node4     |
-                                   |  | Master     |  NodeX              |
+                                   |  | Master     |  NodeX    Node7     |
                                    |  +------------+                     |
                                    +-------------------------------------+
 ```               
@@ -68,7 +72,7 @@ ESPNOW mesh usb adapter for esp32/esp2866/esp01. +nodejs server and slave node c
 - https://github.com/arttupii/ArduinoCommands
 
 
-###### Slave node code
+###### Slave node code example
 ```c++
 #include <EspNowAESBroadcast.h>
 #include"SimpleMqtt.h"
@@ -171,7 +175,7 @@ void loop() {
   delay(10);
 }
 ```
-#### Config file for nodejs server
+#### Config file for MeshGateway on RasperryPi
 ```javascript
 //config.js
 module.exports = {
