@@ -19,6 +19,7 @@ ESPNOW mesh usb adapter for esp32/esp2866/esp01. +nodejs server and slave node c
 - Send and pray support (Send a message to all nodes without reply/ack)
 - Easy to configure
 - Simple mqqt interface
+- Works on esp-now broadcast
 
 ###### Demo video
 - https://youtu.be/tXgNWhqPE14
