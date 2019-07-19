@@ -1,28 +1,35 @@
-ESPNOW mesh usb adapter for esp32/esp2866/esp01. (+nodejs server and slave node codes)
+# EspNow flooding mesh
 
-Features:
+ESPNOW mesh usb adapter for esp32/esp2866/esp01. +nodejs server and slave node codes
+
+##### Features:
 - Mesh nodes use MQTT service (subscribe/publish)
 - Master node (USBAdapter=ESP32 or ESP2866) is connected to RaspberryPi's USB port
 - Maximum number of slave nodes: unlimited
 - Flooding mesh support
+- Each Nodes can communicate with each other
 - ESP32, ESP2866, ESP01
 - Ping about 40-60ms
+- ttl
 - Battery node support
-- Nearly instant connection after reboot
+- Nearly instant connection after poweron
 - AES128
 - Retransmission support
 - Send and request reply support
 - Send and pray support (Send a message to all nodes without reply/ack)
+- Easy to configure
+- Simple mqqt interface
 
+###### Demo video
+- https://youtu.be/tXgNWhqPE14
 
+###### Software for master Node
+- https://github.com/arttupii/EspNowUsb/tree/master/EspNowUsb
 
-Software for master Node
-https://github.com/arttupii/EspNowUsb/tree/master/EspNowUsb
+###### Software for slave Nodes
+- https://github.com/arttupii/EspNowUsb/tree/master/arduinoSlaveNode/main
 
-Software for slave Nodes
-https://github.com/arttupii/EspNowUsb/tree/master/arduinoSlaveNode/main
-
-Sofware for RaspberryPi (conversation between mesh and mqtt broker)
+###### Sofware for RaspberryPi (conversation between mesh and mqtt broker)
  - https://github.com/arttupii/EspNowUsb/tree/master/RaspberryPiServer (needs MQTT broker)
  - See config.js file (https://github.com/arttupii/EspNowUsb/blob/master/RaspberryPiServer/config.js)
 ```
@@ -55,13 +62,13 @@ Sofware for RaspberryPi (conversation between mesh and mqtt broker)
                                    |  +------------+                     |
                                    +-------------------------------------+
 ```               
-Dependencies:
+###### Dependencies:
 - https://github.com/arttupii/espNowAESBroadcast
 - https://github.com/arttupii/ArduinoCommands
 
 
-Slave node code
-```
+###### Slave node code
+```c++
 #include <EspNowAESBroadcast.h>
 #include"SimpleMqtt.h"
 
@@ -86,7 +93,7 @@ void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt) {
 
 void setup() {
   Serial.begin(115200);
-  simpleMqtt.setDeviceName(deviceName); //set unique name for node device!!! It is like a ip address
+  simpleMqtt.setDeviceName(deviceName); //set unique name for node device!!! It is like an ip address
 
   pinMode(LED, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
@@ -151,7 +158,22 @@ void loop() {
   delay(10);
 }
 ```
-
+#### Config file for nodejs server
+```javascript
+//config.js
+module.exports = {
+  "usbPort": "/dev/ttyUSB0",
+  "mesh": {
+    "secredKey": [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF],
+    "ttl": 3,
+    "channel": 1
+  },
+  "mqtt": {
+    "host": "mqtt://localhost",
+    "root": "mesh/"
+  }
+}
+```
 #### Example messages (USBAdapter)
 ##### Initialize mesh network
 ```
