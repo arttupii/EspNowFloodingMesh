@@ -15,7 +15,7 @@ ESPNOW mesh usb adapter for esp32/esp2866/esp01. +nodejs server and slave node c
 - Nearly instant connection after poweron
 - AES128
 - Retransmission support
-- Send and request reply support
+- Request/Reply support
 - Send and pray support (Send a message to all nodes without reply/ack)
 - Easy to configure
 - Simple mqqt interface
