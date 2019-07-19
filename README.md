@@ -1,7 +1,7 @@
 ESPNOW mesh usb adapter for esp32/esp2866/esp01. (+nodejs server and slave node codes)
 
 Features:
-- Mesh nodes use MQTT service (supscribe/publish) 
+- Mesh nodes use MQTT service (subscribe/publish) 
 - Master node (USBAdapter=ESP32 or ESP2866) is connected to RaspberryPi via USB
 - Maximum number of slave nodes: unlimited
 - Flooding mesh support
@@ -10,15 +10,16 @@ Features:
 - Battery node support
 - AES128
 
-Software for MasterNode
+
+Software for master Node
 https://github.com/arttupii/EspNowUsb/tree/master/EspNowUsb
 
-Software for slaveNodes
+Software for slave Nodes
 https://github.com/arttupii/EspNowUsb/tree/master/arduinoSlaveNode/main
 
-Sofware for RaspberryPi
-https://github.com/arttupii/EspNowUsb/tree/master/RaspberryPiServer
-
+Sofware for RaspberryPi (conversation between mesh and mqtt broker)
+ - https://github.com/arttupii/EspNowUsb/tree/master/RaspberryPiServer (needs MQTT broker)
+ - See config.js file (https://github.com/arttupii/EspNowUsb/blob/master/RaspberryPiServer/config.js)
 
 ```
  ____________________________________
@@ -47,6 +48,110 @@ Dependencies:
 - https://github.com/arttupii/espNowAESBroadcast
 - https://github.com/arttupii/ArduinoCommands
 
+
+Slave node code
+```
+#include <EspNowAESBroadcast.h>
+#include"SimpleMqtt.h"
+
+/********NODE SETUP********/
+#define ESP_NOW_CHANNEL 1
+unsigned char secredKey[] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE, 0xFF};
+const char deviceName[] = "device1";
+const int ttl = 3;
+
+#define LED 1 /*LED pin*/
+#define BUTTON_PIN 0
+/*****************************/
+
+
+SimpleMQTT simpleMqtt;
+
+void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt){
+  if(len>0) {
+    if(replyPrt) { //Reply asked. Send reply
+      
+    } else {
+     
+    }
+    simpleMqtt.parse(data, len);
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+  simpleMqtt.setDeviceName(deviceName); //set unique name for node device!!!
+
+  pinMode(LED, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+
+  //Set device in AP mode to begin with
+  espNowAESBroadcast_RecvCB(espNowAESBroadcastRecv);
+  espNowAESBroadcast_secredkey(secredKey);
+  espNowAESBroadcast_setToMasterRole(false, ttl);
+      
+  espNowAESBroadcast_begin(ESP_NOW_CHANNEL);
+
+  simpleMqtt.handleSend([](const char *mqttMsg, int len){
+     espNowAESBroadcast_send((uint8_t*)mqttMsg, len, ttl); //Send MQTT commands via mesh network
+  });
+
+  espNowAESBroadcast_requestInstantTimeSyncFromMaster();
+  while (espNowAESBroadcast_isSyncedWithMaster() == false); //Wait sync with master
+  
+  bool success = simpleMqtt.subscribe("led"); //Subscribe own led state from MQTT server device1/led/set
+
+}
+
+bool ledOn=false;
+bool buttonStatechange = false;
+
+void setLedOn(){
+  ledOn=true;
+  simpleMqtt.publishS("led", "on"); //Send mqtt topic device1/led/value on
+  Serial.println("LED ON");
+  digitalWrite(LED, LOW);
+}
+void setLedOff(){
+  ledOn=false;
+  simpleMqtt.publishS("led", "off"); //Send mqtt topic device1/led/value off
+  Serial.println("LED OFF");
+  digitalWrite(LED, HIGH);
+}
+
+void loop() {
+  espNowAESBroadcast_loop();
+  simpleMqtt.handleSubscribe([](const char *topic, const char* value){
+    
+    if(simpleMqtt.compareTopic(topic, deviceName,"/led/set")) { //Check, is topic /device1/led/set
+      if(strcmp("on", value)==0) { //check value and set led
+        setLedOn();
+      }
+      if(strcmp("off", value)==0) {
+        setLedOff();
+      }
+     
+    }
+    
+  });
+pinMode(BUTTON_PIN, INPUT);
+  digitalWrite(BUTTON_PIN, HIGH);
+
+  int p = digitalRead(BUTTON_PIN);
+  
+  if(p == 1 && buttonStatechange==false) {
+    buttonStatechange=true;
+    setLedOn();
+  }
+  if(p == 0 && buttonStatechange==true) {
+    buttonStatechange=false;
+    setLedOff();
+  }
+  
+  delay(10);
+}
+```
 
 #### Example messages (USBAdapter)
 ##### Initialize mesh network
@@ -105,132 +210,5 @@ Dependencies:
 ```
 <RTC GET;
 >ACK 243495;
-```
-
-#### Test setup
-ESP2866, ESP01 and ESP32(usb)
-![Test setup](https://raw.githubusercontent.com/arttupii/EspNowUsb/master/testSetup.png)
-
-
-#### Nodejs-server example. 
-Nodejs-server configures usb-adapter and receives some messages from mesh
-```javascript
-const Promise = require('bluebird');
-const si = require('./serialInterface');
-
-si.begin("/dev/ttyUSB1");
-si.receiveCallback(function(data){
-    console.info("Received: %j", data); 
-});
-
-Promise.delay(1000)
-.then(function(){
-   return si.reboot().delay(3000); //Reboot usb adapter
-})
-.then(function(){
-    return si.ping(); //Send ping to usb adapter
-})
-.then(function(){
-    return si.role("master",3); //Set role to master and ttl=3
-})
-.then(function(){
-    //Set secred key
-    return si.setKey([0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF]);
-})
-.then(function(){
-    return si.setChannel(1); //Set chancel
-})
-.then(function(){
-    return si.init(); //Initialize an usb adapter
-})
-.then(function(){
-    return si.getRTC(); //Get RTC time 
-})
-.then(function(){
-    return si.setRTC((new Date).getTime()/1000).delay(3000); //Set RTC time
-})
-.then(function(){
-    return si.send([1,2,3,4], 3); //Send a message to all nodes with ttl=3
-})
-.then(function(){
-    return si.req("MARGO", 3) //Send a message to all nodes with ttl=3 and wait replies
-    .then(function(replies){
-        console.info("Received %d replies", replies.length);
-        console.info(JSON.stringify(replies)); //Print all replies
-    });
-})
-.catch(function(e){
-console.info(e);
-});
-```
-Slave node code
-```c++
-#include <EspNowAESBroadcast.h>
-
-#define ESP_NOW_CHANNEL 1
-//AES 128bit
-unsigned char secredKey[] = {0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE, 0xFF};
-
-void espNowAESBroadcastRecv(const uint8_t *data, int len, uint32_t replyPrt){
-  if(len>0) {
-    if(replyPrt) { //Reply asked. Send reply
-        char m[]="POLO";
-        Serial.println((char*)data); //Print MARCO
-        Serial.println("POLO");
-        espNowAESBroadcast_sendReply((uint8_t*)m, sizeof(m), 0/*ttl*/, replyPrt);
-        Serial.println(replyPrt);
-    } else {
-    }
-  }
-}
-
-void setup() {
-  Serial.begin(115200);
-  //Set device in AP mode to begin with
-  espNowAESBroadcast_RecvCB(espNowAESBroadcastRecv);
-  espNowAESBroadcast_secredkey(secredKey);
-  espNowAESBroadcast_begin(ESP_NOW_CHANNEL);
-  
-  espNowAESBroadcast_requestInstantTimeSyncFromMaster();
-  while (espNowAESBroadcast_isSyncedWithMaster() == false);
-}
-
-void loop() {
-  espNowAESBroadcast_loop();
-  delay(10);
-
-  static unsigned long m = millis();
-  if(m+5000<millis()) {
-    char message[] = "SLAVE(ESP01) HELLO MESSAGE";
-    espNowAESBroadcast_send((uint8_t*)message, sizeof(message));
-    m = millis();
-  }
-  espNowAESBroadcast_loop();
-  delay(10);
-}
-```
-#####Server log output
-```
-a@labra:~/git/EspNowUsb/RaspberryPiServer$ node index.js 
-begin /dev/ttyUSB1 115200
-reboot
-Ping
-Role MASTER, ttl=3
-key [0,17,34,51,68,85,102,119,136,153,170,187,204,221,238,255]
-Channel 1;
-Init
-RTC GET
-RTC 1563452038
-send ttl=3, [1,2,3,4]
-request ttl=3, "MARGO"
-Wait all Replies: replyID=3623206401
-Received: [83,76,65,86,69,40,69,83,80,48,49,41,32,72,69,76,76,79,32,77,69,83,83,65,71,69,0]
-Received: [83,76,65,86,69,40,69,83,80,48,49,41,32,72,69,76,76,79,32,77,69,83,83,65,71,69,0]
-Received 1 replies
-[[80,79,76,79,0]]
-Received: [83,76,65,86,69,40,69,83,80,48,49,41,32,72,69,76,76,79,32,77,69,83,83,65,71,69,0]
-Received: [83,76,65,86,69,40,69,83,80,48,49,41,32,72,69,76,76,79,32,77,69,83,83,65,71,69,0]
-^C
-a@labra:~/git/EspNowUsb/RaspberryPiServer$ 
 ```
 
