@@ -89,7 +89,6 @@ void loop() {
         ttl = atoi(p1);
         sscanf(p2, "%u", &replyPrt);
 
-        uint32_t replyptr = espNowAESBroadcast_sendAndHandleReply((uint8_t*)binary, size, ttl, NULL);
         espNowAESBroadcast_sendReply((uint8_t*)binary, size, ttl, replyPrt);
         cmd.send("ACK", buf);
       }
