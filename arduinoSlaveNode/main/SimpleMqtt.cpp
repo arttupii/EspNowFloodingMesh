@@ -1,6 +1,6 @@
 #include"SimpleMqtt.h"
 #include<Arduino.h>
-#include <EspNowAESBroadcast.h>
+#include <EspNowFloodingMesh.h>
 
 SimpleMQTT::SimpleMQTT(int ttl) {
   buffer[0] = 0;
@@ -73,7 +73,7 @@ void SimpleMQTT::handlePublishEvents(void (cb)(const char *, const char*)) {
 bool SimpleMQTT::send(const char *mqttMsg, int len, uint32_t replyId) {
   static SimpleMQTT *myself = this;
   if (replyId == 0) {
-    bool status = espNowAESBroadcast_sendAndWaitReply((uint8_t*)mqttMsg, len, ttl, 3, [](const uint8_t *data, int size) {
+    bool status = espNowFloodingMesh_sendAndWaitReply((uint8_t*)mqttMsg, len, ttl, 3, [](const uint8_t *data, int size) {
       if (size > 0) {
         myself->parse(data, size, 0, true); //Parse simple Mqtt protocol messages
       }
@@ -85,7 +85,7 @@ bool SimpleMQTT::send(const char *mqttMsg, int len, uint32_t replyId) {
     }
     return status;
   } else {
-    espNowAESBroadcast_sendReply((uint8_t*)mqttMsg, len, ttl, replyId);
+    espNowFloodingMesh_sendReply((uint8_t*)mqttMsg, len, ttl, replyId);
   }
 }
 

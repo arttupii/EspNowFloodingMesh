@@ -17,6 +17,7 @@ class SimpleMQTT {
         void handlePublishEvents(void (*cb)(const char *, const char*));
         
         bool compareTopic(const char* topic, const char* deviceName, const char* t);
+        
     private:
         const char *deviceName;
         char buffer[100];
