@@ -1,7 +1,7 @@
 # EspNow flooding mesh
 
 Includes:
-- ESPNOW mesh usb adapter codes for esp32/esp2866. 
+- ESPNOW mesh usb adapter codes for esp32/esp2866.
 - Mesh gateway codes (Convert messages between mesh and MQTT broker)
 - Slave node codes (esp32/esp2866/esp01)
 
@@ -67,15 +67,16 @@ Includes:
                                    |  +------------+                     |
                                    +-------------------------------------+
 ```               
-###### Dependencies:
+###### Arduino libraries:
 - https://github.com/arttupii/espNowAESBroadcast
 - https://github.com/arttupii/ArduinoCommands
+- https://github.com/arttupii/SimpleMqttLibrary
 
 
 ###### Slave node code example
 ```c++
 #include <EspNowAESBroadcast.h>
-#include"SimpleMqtt.h"
+#include <SimpleMqtt.h>
 
 /********NODE SETUP********/
 #define ESP_NOW_CHANNEL 1
@@ -133,7 +134,7 @@ void setup() {
       }
     }
   });
-  
+
   //Handle MQTT events from master
   simpleMqtt.handlePublishEvents([](const char *topic, const char* value) {
     if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) { //Trigger topic,  /device1/led/set
@@ -145,8 +146,8 @@ void setup() {
         Serial.println("Set LED OFF");
         digitalWrite(LED, LOW);
       }
-      if(!simpleMqtt.publish(deviceName, "/led/value", value)) { 
-        Serial.println("Publish failed... Reboot"); 
+      if(!simpleMqtt.publish(deviceName, "/led/value", value)) {
+        Serial.println("Publish failed... Reboot");
         ESP.restart();
       }
     }
