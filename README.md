@@ -181,7 +181,6 @@ void loop() {
 ```
 #### Config file for MeshGateway on RasperryPi
 ```javascript
-//config.js
 module.exports = {
   "usbPort": "/dev/ttyUSB0",
   "mesh": {
@@ -189,6 +188,7 @@ module.exports = {
     "ttl": 3,
     "channel": 1
   },
+  "dbCacheFile":"./cache.json",
   "mqtt": {
     "host": "mqtt://localhost",
     "root": "mesh/"
