@@ -2,8 +2,8 @@
 
 Includes:
 - ESPNOW mesh usb adapter codes for esp32/esp2866.
-- Mesh gateway codes (Convert messages between mesh and MQTT broker)
-- Slave node codes (esp32/esp2866/esp01)
+- Mesh gateway codes (Convert messages between mesh network and MQTT broker)
+- Slave node codes (Slave node can read sensors, control switches/lights or something else)
 
 ##### Features:
 - Mesh nodes use MQTT service (subscribe/publish)
@@ -63,7 +63,7 @@ Includes:
       ^                            |     Node1        Node3              |
       |    USB(SerialData)         |  +------------+   Node3     Node5   |
       +------------------------------>| USBAdapter |           Node4     |
-                                   |  | Master     |  NodeX    Node7     |
+                                   |  | (Master)   |  NodeX    Node7     |
                                    |  +------------+                     |
                                    +-------------------------------------+
 ```               
@@ -137,7 +137,7 @@ void setup() {
 
   //Handle MQTT events from master
   simpleMqtt.handlePublishEvents([](const char *topic, const char* value) {
-    if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) { //Trigger topic,  /device1/led/set
+    if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) { 
       if (strcmp("on", value) == 0) { //check value and set led
         Serial.println("Set LED ON");
         digitalWrite(LED, HIGH);
@@ -152,8 +152,8 @@ void setup() {
       }
     }
   });
-  bool success = simpleMqtt.subscribeTopic(deviceName,"/led/set"); //Subscribe own led state from MQTT server device1/led/set
-  success = simpleMqtt.subscribeTopic(deviceName,"/led/value"); //Subscribe own led state from MQTT server device1/led/set
+  bool success = simpleMqtt.subscribeTopic(deviceName,"/led/set"); //Subscribe the led state from MQTT server device1/led/set
+  success = simpleMqtt.subscribeTopic(deviceName,"/led/value"); //Subscribe the led state from MQTT server (topic is device1/led/set)
 }
 
 bool buttonStatechange = false;
