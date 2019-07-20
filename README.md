@@ -35,10 +35,10 @@ Includes:
 - https://github.com/arttupii/EspNowUsb/tree/master/arduinoSlaveNode/main
 
 ###### MeshGateway software for RaspberryPi (conversation between mesh and mqtt broker)
- - https://github.com/arttupii/EspNowUsb/tree/master/RaspberryPiServer (needs MQTT broker)
+ - https://github.com/arttupii/EspNowFloodingMesh/tree/master/gateway (needs MQTT broker)
  - See config.js file (https://github.com/arttupii/EspNowUsb/blob/master/RaspberryPiServer/config.js)
-```
-      sudo apt-get install mosquitto
+```   cd gateway
+      sudo apt-get install mosquitto nodejs npm
       nano config.js
       npm install
       node index.js
