@@ -1,9 +1,9 @@
 # EspNow flooding mesh
 
 Includes:
--ESPNOW mesh usb adapter codes for esp32/esp2866. 
--Mesh gateway codes (Convert messages between mesh and MQTT broker)
--Slave node codes (esp32/esp2866/esp01)
+- ESPNOW mesh usb adapter codes for esp32/esp2866. 
+- Mesh gateway codes (Convert messages between mesh and MQTT broker)
+- Slave node codes (esp32/esp2866/esp01)
 
 ##### Features:
 - Mesh nodes use MQTT service (subscribe/publish)
