@@ -68,7 +68,7 @@ Includes:
                                    +-------------------------------------+
 ```               
 ###### Arduino libraries:
-- https://github.com/arttupii/espNowAESBroadcast
+- https://github.com/arttupii/espNowFloodingMeshLibrary
 - https://github.com/arttupii/ArduinoCommands
 - https://github.com/arttupii/SimpleMqttLibrary
 
