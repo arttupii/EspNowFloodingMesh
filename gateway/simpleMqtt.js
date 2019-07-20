@@ -39,11 +39,10 @@ function readCacheFileFromDisk(){
 readCacheFileFromDisk();
 
 client.on('connect', function () {
-  client.subscribe('presence', function (err) {
-    if (err) {
-        console.info(err);
-      }
-  })
+  _.forEach(_.keys(mqttCache), function(topic){
+    console.info("Subscribe topic %s from cache", topic);
+    client.subscribe(config.mqtt.root+topic);
+  });
 })
 
 function generateDataUpdateMsg(shortTopic, value, buffer) {
