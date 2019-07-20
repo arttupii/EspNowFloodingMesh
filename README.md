@@ -164,7 +164,7 @@ bool buttonStatechange = false;
 void loop() {
   espNowFloodingMesh_loop();
 
-  int p = Serial.read();//digitalRead(BUTTON_PIN);
+  int p = digitalRead(BUTTON_PIN);
 
   if (p == '0' && buttonStatechange == false) {
     buttonStatechange = true;
