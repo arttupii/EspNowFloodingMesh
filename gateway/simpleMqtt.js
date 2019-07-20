@@ -45,6 +45,27 @@ client.on('connect', function () {
   });
 })
 
+function updateValueMqttCache(shortTopic, value) {
+  if(mqttCache[shortTopic]===undefined) {
+    mqttCache[shortTopic] = {
+      status:{}
+    }
+  }
+  mqttCache[shortTopic].value = value;
+  mqttCache[shortTopic].lastUpdate = new Date(Date.now()).toString();
+  writeChacheFile();
+}
+function updateErrorMqttCache(shortTopic, status) {
+  if(mqttCache[shortTopic]===undefined) {
+    mqttCache[shortTopic] = {
+      status:{}
+    }
+  }
+  mqttCache[shortTopic].status.errorStatus = status;
+  mqttCache[shortTopic].status.lastUpdate = new Date(Date.now()).toString();
+  writeChacheFile();
+}
+
 function generateDataUpdateMsg(shortTopic, value, buffer) {
   if(buffer!==undefined) {
     if(buffer=="") {
@@ -65,18 +86,24 @@ client.on('message', function (topic, message) {
   var v = _.map(payload,function(c){
     return String.fromCharCode(c);
   }).join("");
-  mqttCache[shortTopic] = v;
-  writeChacheFile();
+
+  updateValueMqttCache(shortTopic, v);
+
   var msg = generateDataUpdateMsg(shortTopic,v);
   var tryCnt=3;
   function send() {
     return si.req(msg, config.mesh.ttl)
+    .then(function(){
+      updateErrorMqttCache(shortTopic, "OK");
+    })
     .error(function (e) {
       console.info("No reply from node...");
       tryCnt--;
       if(tryCnt>0) {
         console.info("Try again...");
         return send();
+      } else {
+        updateErrorMqttCache(shortTopic, "NoReceiver");
       }
     });
   }
@@ -101,9 +128,9 @@ function parse(simpleMqtt, replyId, data) {
         if(s[0]==="P") {
           console.info("Publish ", config.mqtt.root+s[1],s[2]);
           client.publish(config.mqtt.root+s[1],s[2]);
-          mqttCache[s[1]] = s[2];
-          writeChacheFile();
+          updateValueMqttCache(s[1], s[2]);
         }
+        updateErrorMqttCache(s[1], "OK");
       }
   });
   if(parseInt(replyId)>0) {
@@ -112,11 +139,10 @@ function parse(simpleMqtt, replyId, data) {
     var msg = "";
     _.forEach(subscribedTopics, function(t){
       if(mqttCache.hasOwnProperty(t)) {
-        var value = mqttCache[t];
+        var value = mqttCache[t].value;
         msg=generateDataUpdateMsg(t, value, msg);
       }
     });
-    console.info("%j,%j",mqttCache,subscribedTopics)
     console.info("Send ack to client. ReplyId=%d, msg\"%s\"", replyId, msg);
     si.reply(msg, replyId, config.mesh.ttl);
   }
