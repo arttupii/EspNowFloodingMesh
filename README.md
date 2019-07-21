@@ -1,5 +1,13 @@
 # EspNow flooding mesh
 
+Problems:
+- ESP2866<--->ESP32/ES01 Extremely short communication range. Everything works ok if distance between nodes is less than one meter???????? If distance is more than one meter, no messages, no even corrupted messages. In some reason EspNow broadcast fails if distanse between nodes is more than one meter. ESPNow range should be at least 3xWifi??? WTF?
+--> Broadcast initalization code is found here: https://github.com/arttupii/espNowFloodingMeshLibrary/blob/90121fe1a921051d2d7ae6ecddf395e57e0683cb/EspNowFloodingMesh.cpp#L555
+
+Works:
+- All except long communication range. All works ok on my desktop.
+- Long range mesh between ESP32<---->ESP32
+
 Includes:
 - ESPNOW mesh usb adapter codes (esp32/esp2866).
 - Mesh gateway codes (Convert messages between mesh network and MQTT broker)
@@ -21,7 +29,9 @@ Includes:
 - Request/Reply support
 - Send and pray support (Send a message to all nodes without reply/ack)
 - Easy to configure
-- Simple mqqt interface
+- Simple mqqt interface.
+- Automatic node discovery
+- MQTT local cache on raspberry
 - Works on esp-now broadcast
 - Arduino
 
@@ -81,10 +91,6 @@ Includes:
 #include<SimpleMqtt.h>
 
 /********NODE SETUP********/
-#include <EspNowFloodingMesh.h>
-#include<SimpleMqtt.h>
-
-/********NODE SETUP********/
 #define ESP_NOW_CHANNEL 1
 const char deviceName[] = "device1";
 unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
@@ -104,11 +110,13 @@ void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   }
 }
 
+bool setLed;
+bool ledValue;
 void setup() {
   Serial.begin(115200);
 
-  pinMode(LED, OUTPUT);
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  //pinMode(LED, OUTPUT);
+  //pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   //Set device in AP mode to begin with
   espNowFloodingMesh_RecvCB(espNowFloodingMeshRecv);
@@ -128,16 +136,22 @@ void setup() {
     ESP.restart();
   }
 
-  //Handle MQTT events from master
+  //Handle MQTT events from master. Do not call publish inside of call back. --> Endless event loop and crash
   simpleMqtt.handleSubscribeAndGetEvents([](const char *topic, const char* value) {
     if (simpleMqtt.compareTopic(topic, deviceName, "/led/value")) { //subscribed  initial value for led.
       if (strcmp("on", value) == 0) { //check value and set led
-        digitalWrite(LED, HIGH);
-        Serial.println("Init: Set Led ON");
+        ledValue=true;
       }
       if (strcmp("off", value) == 0) {
-        digitalWrite(LED, HIGH);
-        Serial.println("Init: Set Led OFF");
+        ledValue=false;
+      }
+    }
+    if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) {
+      if (strcmp("on", value) == 0) { //check value and set led
+        setLed=true;
+      }
+      if (strcmp("off", value) == 0) {
+        setLed=false;
       }
     }
   });
@@ -146,16 +160,10 @@ void setup() {
   simpleMqtt.handlePublishEvents([](const char *topic, const char* value) {
     if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) {
       if (strcmp("on", value) == 0) { //check value and set led
-        Serial.println("Set LED ON");
-        digitalWrite(LED, HIGH);
+        setLed=true;
       }
       if (strcmp("off", value) == 0) {
-        Serial.println("Set LED OFF");
-        digitalWrite(LED, LOW);
-      }
-      if (!simpleMqtt.publish(deviceName, "/led/value", value)) {
-        Serial.println("Publish failed... Reboot");
-        ESP.restart();
+        setLed=false;
       }
     }
   });
@@ -168,20 +176,36 @@ void setup() {
 bool buttonStatechange = false;
 
 void loop() {
-   espNowFloodingMesh_loop();
+  espNowFloodingMesh_loop();
 
   int p = Serial.read();//digitalRead(BUTTON_PIN);
 
   if (p == '0' && buttonStatechange == false) {
     buttonStatechange = true;
-    simpleMqtt.publish(deviceName, "/led/value", "on");
-    digitalWrite(LED, HIGH);
+    setLed=true;
   }
   if (p == '1' && buttonStatechange == true) {
     buttonStatechange = false;
-    simpleMqtt.publish(deviceName, "/led/value", "off");
-    digitalWrite(LED, LOW);
+    setLed=false;
   }
+
+  if(ledValue==true && setLed==false) {
+    ledValue=false;
+    //digitalWrite(LED,HIGH);
+    if (!simpleMqtt.publish(deviceName, "/led/value", "off")) {
+      Serial.println("Publish failed... Reboot");
+      ESP.restart();
+    }
+  }
+  if(ledValue==false && setLed==true) {
+    ledValue=true;
+    //digitalWrite(LED,HIGH);
+    if (!simpleMqtt.publish(deviceName, "/led/value", "on")) {
+      Serial.println("Publish failed... Reboot");
+      ESP.restart();
+    }
+  }
+
   delay(10);
 }
 ```
