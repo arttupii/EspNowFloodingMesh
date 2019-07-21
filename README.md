@@ -1,5 +1,13 @@
 # EspNow flooding mesh
 
+Problems:
+- ESP2866<--->ESP32/ES01 Extremely short communication range. Everything works ok if distance between nodes is less than one meter???????? If distance is more than one meter, no messages, no even corrupted messages. In some reason EspNow broadcast fails if distanse between nodes is more than one meter. ESPNow range should be at least 3xWifi??? WTF?
+- ESP32<---->ESP32 ESP-Now broadcast doesn't work at all
+--> Broadcast initalization code is found here: https://github.com/arttupii/espNowFloodingMeshLibrary/blob/90121fe1a921051d2d7ae6ecddf395e57e0683cb/EspNowFloodingMesh.cpp#L555
+
+Works:
+- All except long communication range. All works ok on my desktop.
+
 Includes:
 - ESPNOW mesh usb adapter codes (esp32/esp2866).
 - Mesh gateway codes (Convert messages between mesh network and MQTT broker)
@@ -21,7 +29,9 @@ Includes:
 - Request/Reply support
 - Send and pray support (Send a message to all nodes without reply/ack)
 - Easy to configure
-- Simple mqqt interface
+- Simple mqqt interface.
+- Automatic node discovery
+- MQTT local cache on raspberry
 - Works on esp-now broadcast
 - Arduino
 
