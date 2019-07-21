@@ -24,6 +24,9 @@ function setup() {
       return si.role("master",3);
   })
   .then(function(){
+    return si.setInitializationVector(config.mesh.initializationVector);
+  })
+  .then(function(){
       return si.setKey(config.mesh.secredKey);
   })
   .then(function(){

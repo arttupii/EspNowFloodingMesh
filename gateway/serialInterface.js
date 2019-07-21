@@ -211,7 +211,33 @@ function setKey(key) {
     });
 });
 }
+function setInitializationVector(iv) {
+    return mutex(true).then(function(done){
+    console.info("InitializationVector %j", iv);
 
+    if(iv.length!==16) return Promise.reject("Invalid key size");
+
+    port.write("IV SET [" + _.map(iv,function(a){
+        return a.toString(16).toUpperCase();
+    }).join(",")+"];");
+
+    return new Promise(function(resolve, reject){
+        return waitAckNack()
+        .then(function(p){
+            if(p[0]==="ACK") {
+                resolve();
+            } {
+               reject("KEY FAILED");
+            }
+        });
+      }).timeout(
+    1000, "InitializationVector operation timed out").then(function(){
+      mutex(false);
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
+}
 function convertToBinaryArray(a){
     function f(c) {
         return _.map(c, function(b){
@@ -379,6 +405,7 @@ module.exports.setChannel = setChannel;
 module.exports.reboot = reboot;
 module.exports.getRTC = getRTC;
 module.exports.setRTC = setRTC;
+module.exports.setInitializationVector = setInitializationVector;
 
 module.exports.send = send;
 module.exports.req = request;
