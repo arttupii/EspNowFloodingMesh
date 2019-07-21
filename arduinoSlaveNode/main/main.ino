@@ -17,9 +17,7 @@ SimpleMQTT simpleMqtt = SimpleMQTT(ttl, deviceName);
 
 void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   if (len > 0) {
-    Serial.println("********************************************************************");
-    Serial.println(replyPrt);
-    simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
+   simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
   }
 }
 
@@ -81,7 +79,7 @@ void setup() {
   bool success = simpleMqtt.subscribeTopic(deviceName,"/led/set"); //Subscribe the led state from MQTT server device1/led/set
   success = simpleMqtt.subscribeTopic(deviceName,"/led/value"); //Subscribe the led state from MQTT server (topic is device1/led/set)
 
-Serial.println("D!!!!!!!!!!!!!!!!!!!!!!!");
+  //simpleMqtt.unsubscribeTopic(deviceName,"/led/value"); //unsubscribe
 }
 
 bool buttonStatechange = false;
