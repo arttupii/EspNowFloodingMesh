@@ -13,7 +13,7 @@ const int ttl = 3;
 #define LED 1 /*LED pin*/
 #define BUTTON_PIN 0
 
-SimpleMQTT simpleMqtt = SimpleMQTT(ttl);
+SimpleMQTT simpleMqtt = SimpleMQTT(ttl, deviceName);
 
 void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   if (len > 0) {
@@ -48,7 +48,7 @@ void setup() {
   }
 
   //Handle MQTT events from master
-  simpleMqtt.handleSubscribeEvents([](const char *topic, const char* value) {
+  simpleMqtt.handleSubscribeAndGetEvents([](const char *topic, const char* value) {
     if (simpleMqtt.compareTopic(topic, deviceName, "/led/value")) { //subscribed  initial value for led.
       if (strcmp("on", value) == 0) { //check value and set led
         digitalWrite(LED, HIGH);
@@ -80,12 +80,14 @@ void setup() {
   });
   bool success = simpleMqtt.subscribeTopic(deviceName,"/led/set"); //Subscribe the led state from MQTT server device1/led/set
   success = simpleMqtt.subscribeTopic(deviceName,"/led/value"); //Subscribe the led state from MQTT server (topic is device1/led/set)
+
+Serial.println("D!!!!!!!!!!!!!!!!!!!!!!!");
 }
 
 bool buttonStatechange = false;
 
 void loop() {
-  espNowFloodingMesh_loop();
+   espNowFloodingMesh_loop();
 
   int p = Serial.read();//digitalRead(BUTTON_PIN);
 
