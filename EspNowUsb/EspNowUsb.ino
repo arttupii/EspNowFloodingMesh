@@ -37,7 +37,6 @@ void setup() {
 int channel = 1;
 char buf[20];
 bool initialized = false;
-
 void loop() {
   espNowFloodingMesh_loop();
   delay(1);
