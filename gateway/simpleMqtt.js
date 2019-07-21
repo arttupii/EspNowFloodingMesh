@@ -45,22 +45,44 @@ client.on('connect', function () {
   });
 })
 
-function updateValueMqttCache(shortTopic, value) {
+function initMqttCacheObject(shortTopic){
   if(mqttCache[shortTopic]===undefined) {
     mqttCache[shortTopic] = {
-      status:{}
+      value:"",
+      lastUpdate:"",
+      subscribedBy:[],
+      status:{
+        errorStatus:"",
+        lastUpdate:""
+      }
     }
   }
+}
+
+function updateValueMqttCache(shortTopic, value) {
+  initMqttCacheObject(shortTopic);
   mqttCache[shortTopic].value = value;
   mqttCache[shortTopic].lastUpdate = new Date(Date.now()).toString();
   writeChacheFile();
 }
-function updateErrorMqttCache(shortTopic, status) {
-  if(mqttCache[shortTopic]===undefined) {
-    mqttCache[shortTopic] = {
-      status:{}
-    }
+function isSubscribedMqttCache(shortTopic) {
+  initMqttCacheObject(shortTopic);
+  return mqttCache[shortTopic].subscribedBy.length>0;
+}
+function addSubscriber(shortTopic, deviceName) {
+  initMqttCacheObject(shortTopic);
+  mqttCache[shortTopic].subscribedBy.push(deviceName);
+  mqttCache[shortTopic].subscribedBy = _.uniq(mqttCache[shortTopic].subscribedBy);
+}
+function deleteSubscriber(shortTopic, deviceName) {
+  if(mqttCache.hasOwnProperty(shortTopic)){
+      mqttCache[shortTopic].subscribedBy = _.filter(mqttCache[shortTopic].subscribedBy, function(s){
+        return s!==deviceName;
+      });
   }
+}
+function updateErrorMqttCache(shortTopic, status) {
+  initMqttCacheObject(shortTopic);
   mqttCache[shortTopic].status.errorStatus = status;
   mqttCache[shortTopic].status.lastUpdate = new Date(Date.now()).toString();
   writeChacheFile();
@@ -69,11 +91,11 @@ function updateErrorMqttCache(shortTopic, status) {
 function generateDataUpdateMsg(shortTopic, value, buffer) {
   if(buffer!==undefined) {
     if(buffer=="") {
-      buffer+="MQTT\n";
-      return buffer+="M:"+shortTopic+":"+value+"\n";
+      buffer+="MQTT MASTER\n";
+      return buffer+="P:"+shortTopic+":"+value+"\n";
     }
   }
-  return "MQTT\nM:"+shortTopic+":"+value+"\n";
+  return "MQTT MASTER\nP:"+shortTopic+":"+value+"\n";
 }
 
 client.on('message', function (topic, message) {
@@ -89,46 +111,65 @@ client.on('message', function (topic, message) {
 
   updateValueMqttCache(shortTopic, v);
 
-  var msg = generateDataUpdateMsg(shortTopic,v);
-  var tryCnt=3;
-  function send() {
-    return si.req(msg, config.mesh.ttl)
-    .then(function(){
-      updateErrorMqttCache(shortTopic, "OK");
-    })
-    .error(function (e) {
-      console.info("No reply from node...");
-      tryCnt--;
-      if(tryCnt>0) {
-        console.info("Try again...");
-        return send();
-      } else {
-        updateErrorMqttCache(shortTopic, "NoReceiver");
-      }
-    });
+  if(isSubscribedMqttCache(shortTopic)) {
+    console.info("Topic has been subscribed --> publish it to mesh network");
+    var msg = generateDataUpdateMsg(shortTopic,v);
+    var tryCnt=3;
+    function send() {
+      return si.req(msg, config.mesh.ttl)
+      .then(function(){
+        updateErrorMqttCache(shortTopic, "OK");
+      })
+      .error(function (e) {
+        console.info("No reply from node...");
+        tryCnt--;
+        if(tryCnt>0) {
+          console.info("Try again...");
+          return send();
+        } else {
+          updateErrorMqttCache(shortTopic, "NoReceiver");
+        }
+      });
+    }
+    send();
+  }else {
+    console.info("No subscriber for topic %s", shortTopic);
   }
-  send();
 });
+
 
 function parse(simpleMqtt, replyId, data) {
   var str = _.map(data,function(c){
     return String.fromCharCode(c);
   }).join("");
+  var deviceName = "";
 
-  if(str.indexOf("MQTT")===0){
+  console.info("Parse: ", str);
+  if(str.indexOf("MQTT")===0) {
     var subscribedTopics = []
     _.each(str.split("\n"), function(c){
-      if(c.indexOf("S:")===0||c.indexOf("P:")===0) {
+      if(c.indexOf("MQTT ")===0){
+        var s = c.split(" ");
+        deviceName = s[1];
+        console.info("DeviceName: \"%s\"", deviceName);
+        return;
+      }
+      if(c.indexOf("S:")===0||c.indexOf("P:")===0||c.indexOf("U:")===0||c.indexOf("G:")===0) {
         var s = c.split(":");
         if(s[0]==="S") {
           console.info("Subscribe ", config.mqtt.root+s[1]);
           client.subscribe(config.mqtt.root+s[1]);
           subscribedTopics.push(s[1]);
+          addSubscriber(s[1], deviceName);
         }
         if(s[0]==="P") {
           console.info("Publish ", config.mqtt.root+s[1],s[2]);
           client.publish(config.mqtt.root+s[1],s[2]);
           updateValueMqttCache(s[1], s[2]);
+        }
+        if(s[0]==="U") { //Unsubscribe
+          console.info("Unsubscribe ", config.mqtt.root+s[1],s[2]);
+          deleteSubscriber(s[1], deviceName);
         }
         updateErrorMqttCache(s[1], "OK");
       }
