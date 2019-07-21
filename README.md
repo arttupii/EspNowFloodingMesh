@@ -1,7 +1,7 @@
 # EspNow flooding mesh
 
 Includes:
-- ESPNOW mesh usb adapter codes for esp32/esp2866.
+- ESPNOW mesh usb adapter codes (esp32/esp2866).
 - Mesh gateway codes (Convert messages between mesh network and MQTT broker)
 - Slave node codes (Slave node can read sensors, control switches/lights or something else)
 
@@ -29,9 +29,11 @@ Includes:
 - https://youtu.be/tXgNWhqPE14
 
 ###### Mesh usb adapter
+- Esp32/Esp2866
 - https://github.com/arttupii/EspNowUsb/tree/master/EspNowUsb
 
 ###### Mesh slave node codes
+- Esp32/Esp2866/Esp-01
 - https://github.com/arttupii/EspNowUsb/tree/master/arduinoSlaveNode/main
 
 ###### MeshGateway software for RaspberryPi (conversation between mesh and mqtt broker)
