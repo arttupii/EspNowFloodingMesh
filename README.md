@@ -1,7 +1,7 @@
 # EspNow flooding mesh
 
 Includes:
-- ESPNOW mesh usb adapter codes for esp32/esp2866.
+- ESPNOW mesh usb adapter codes (esp32/esp2866).
 - Mesh gateway codes (Convert messages between mesh network and MQTT broker)
 - Slave node codes (Slave node can read sensors, control switches/lights or something else)
 
@@ -29,13 +29,15 @@ Includes:
 - https://youtu.be/tXgNWhqPE14
 
 ###### Mesh usb adapter
+- Esp32/Esp2866
 - https://github.com/arttupii/EspNowUsb/tree/master/EspNowUsb
 
 ###### Mesh slave node codes
+- Esp32/Esp2866/Esp-01
 - https://github.com/arttupii/EspNowUsb/tree/master/arduinoSlaveNode/main
 
 ###### MeshGateway software for RaspberryPi (conversation between mesh and mqtt broker)
- - https://github.com/arttupii/EspNowFloodingMesh/tree/master/gateway 
+ - https://github.com/arttupii/EspNowFloodingMesh/tree/master/gateway
  - See config.js file (https://github.com/arttupii/EspNowUsb/blob/master/RaspberryPiServer/config.js)
 ```   cd gateway
       sudo apt-get install mosquitto nodejs npm
@@ -79,6 +81,10 @@ Includes:
 #include<SimpleMqtt.h>
 
 /********NODE SETUP********/
+#include <EspNowFloodingMesh.h>
+#include<SimpleMqtt.h>
+
+/********NODE SETUP********/
 #define ESP_NOW_CHANNEL 1
 const char deviceName[] = "device1";
 unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
@@ -90,13 +96,11 @@ const int ttl = 3;
 #define LED 1 /*LED pin*/
 #define BUTTON_PIN 0
 
-SimpleMQTT simpleMqtt = SimpleMQTT(ttl);
+SimpleMQTT simpleMqtt = SimpleMQTT(ttl, deviceName);
 
 void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   if (len > 0) {
-    Serial.println("********************************************************************");
-    Serial.println(replyPrt);
-    simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
+   simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
   }
 }
 
@@ -125,7 +129,7 @@ void setup() {
   }
 
   //Handle MQTT events from master
-  simpleMqtt.handleSubscribeEvents([](const char *topic, const char* value) {
+  simpleMqtt.handleSubscribeAndGetEvents([](const char *topic, const char* value) {
     if (simpleMqtt.compareTopic(topic, deviceName, "/led/value")) { //subscribed  initial value for led.
       if (strcmp("on", value) == 0) { //check value and set led
         digitalWrite(LED, HIGH);
@@ -157,14 +161,16 @@ void setup() {
   });
   bool success = simpleMqtt.subscribeTopic(deviceName,"/led/set"); //Subscribe the led state from MQTT server device1/led/set
   success = simpleMqtt.subscribeTopic(deviceName,"/led/value"); //Subscribe the led state from MQTT server (topic is device1/led/set)
+
+  //simpleMqtt.unsubscribeTopic(deviceName,"/led/value"); //unsubscribe
 }
 
 bool buttonStatechange = false;
 
 void loop() {
-  espNowFloodingMesh_loop();
+   espNowFloodingMesh_loop();
 
-  int p = digitalRead(BUTTON_PIN);
+  int p = Serial.read();//digitalRead(BUTTON_PIN);
 
   if (p == '0' && buttonStatechange == false) {
     buttonStatechange = true;
