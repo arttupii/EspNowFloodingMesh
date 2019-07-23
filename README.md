@@ -1,12 +1,5 @@
 # EspNow flooding mesh
 
-Problems:
-- range is bad (both ESP now broadcast & 802.1 mac frame). Works fine on my desktop. 2m > not so well.
-
-
-Ideas:
-- Use bluetooth instead of ESP now broadcast & 802.1 mac frame
-- Or cheap 433Mzh transmitter
 
 Includes:
 - Mesh usb adapter codes (esp32/esp2866).
@@ -14,7 +7,7 @@ Includes:
 - Slave node codes (Slave node can read sensors, control switches/lights or something else)
 
 ##### Features:
-- Works on 802.11 mac frame or ESP now broadcast
+- Works on ESP now broadcast (or 802.11 mac frame)
 - Nearly instant connection after poweron
 - Maximum number of slave nodes: unlimited
 - All nodes have the same bsid
@@ -35,6 +28,9 @@ Includes:
 - Automatic node discovery
 - MQTT local cache on raspberry
 - Arduino
+
+###### Slave Node examples
+- PIR-sensor node: https://github.com/arttupii/PirSendorNode
 
 ###### Demo video
 - https://youtu.be/tXgNWhqPE14
@@ -67,7 +63,7 @@ Includes:
 3. Modify gateway/config.js file:
   - set secredKey parameter (16 bytes)
   - set initializationVector parameter (16 bytes).
-4. Start gateway software on RaspberryPi. Copy "char bsid[] = {0x42,0x14,0x3A,0x55,0x76,0x8A};" to notepad. You need this in the next step.
+4. Start gateway software on RaspberryPi. .
 ```
 a@labra:~/git/EspNowUsb/gateway/node index.js
 begin /dev/ttyUSB0 115200
@@ -76,7 +72,6 @@ Subscribe topic device1/led/set from cache
 reboot
 Role MASTER, ttl=NaN
 MAC GET
-SET BSID---> "{0x42,0x14,0x3A,0x55,0x76,0x8A}" (HOX!!! SET THIS VALUE TO ALL YOUR NODES --> "char bsid[] = {0x42,0x14,0x3A,0x55,0x76,0x8A};")
 InitializationVector [178,75,242,247,122,197,236,12,94,31,77,193,174,70,94,117]
 key [0,17,34,51,68,85,102,119,136,153,170,187,204,221,238,255]
 Channel 1;
@@ -84,7 +79,7 @@ Init
 RTC 1563876153
 
 ```
-5. Open slave node code (arduinoSlaveNode/main/main.ino) and modify deviceName, secredKey, iv, bsid and ESP_NOW_CHANNEL paramaters.
+5. Open slave node code (arduinoSlaveNode/main/main.ino) and modify deviceName, secredKey, iv and ESP_NOW_CHANNEL paramaters.
   * deviceName should be unique
   * secredKey, iv, bsid and ESP_NOW_CHANNEL must be match to config.js file on raspberryPi. Otherwise mesh network won't work.
   --> Flash slave node
