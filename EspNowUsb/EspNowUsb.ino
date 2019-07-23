@@ -1,14 +1,15 @@
 #include <EspNowFloodingMesh.h>
 #include <CommandParser.h>
 Commands cmd;
+char bsid[] = {0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06};
 
 #define ESP_NOW_CHANNEL 1
 //AES 128bit
-unsigned char secredKey[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
-unsigned char iv[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+unsigned char iv[16] = {0xb2, 0x4b, 0xf2, 0xf7, 0x7a, 0xc5, 0xec, 0x0c, 0x5e, 0x1f, 0x4d, 0xc1, 0xae, 0x46, 0x5e, 0x75};
 
 void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
-  char replyPrtStr[10];
+  char replyPrtStr[15];
   sprintf(replyPrtStr, "%lu", replyPrt);
   cmd.send("REC", replyPrtStr, data, len);
 }
@@ -105,7 +106,7 @@ void loop() {
         initialized = true;
         espNowFloodingMesh_secredkey(secredKey);
         espNowFloodingMesh_setAesInitializationVector(iv);
-        espNowFloodingMesh_begin(channel);
+        espNowFloodingMesh_begin(channel, bsid);
         cmd.send("ACK");
       } else {
         cmd.send("NACK", "REBOOT NEEDED");
@@ -138,21 +139,41 @@ void loop() {
       } else {
         cmd.send("NACK", "PARAM");
       }
-    } else if (strcmp(cmdName, "IV") == 0) {
-          if (strcmp(p1, "SET") == 0) {
-            if (size == sizeof(secredKey)) {
-              memcpy(iv, binary, size);
-              espNowFloodingMesh_setAesInitializationVector(iv);
-              cmd.send("ACK");
-            } else {
-              cmd.send("NACK", "SIZE!=16");
-            }
-          } else if (strcmp(p1, "GET") == 0) {
-            cmd.send("ACK", secredKey, sizeof(secredKey));
-          } else {
-            cmd.send("NACK", "PARAM");
-          }
+    }
+    else if (strcmp(cmdName, "MEM") == 0) {
+      sprintf(buf, "%d", ESP.getFreeHeap());
+      cmd.send("ACK", buf);
+
+    }
+    else if (strcmp(cmdName, "IV") == 0) {
+      if (strcmp(p1, "SET") == 0) {
+        if (size == sizeof(secredKey)) {
+          memcpy(iv, binary, size);
+          espNowFloodingMesh_setAesInitializationVector(iv);
+          cmd.send("ACK");
+        } else {
+          cmd.send("NACK", "SIZE!=16");
         }
+      } else if (strcmp(p1, "GET") == 0) {
+        cmd.send("ACK", secredKey, sizeof(secredKey));
+      } else {
+        cmd.send("NACK", "PARAM");
+      }
+    } 
+    else if (strcmp(cmdName, "BSID") == 0) {
+      if (strcmp(p1, "SET") == 0) {
+        if (size == sizeof(bsid)) {
+          memcpy(bsid, binary, size);
+          cmd.send("ACK");
+        } else {
+          cmd.send("NACK", "INVALID SIZE");
+        }
+      } else if (strcmp(p1, "GET") == 0) {
+        cmd.send("ACK", (unsigned char*)bsid, sizeof(bsid));
+      } else {
+        cmd.send("NACK", "PARAM");
+      }
+    }
     else {
       cmd.send("NACK", "INVALID COMMAND"); //Handle invalid command
     }
