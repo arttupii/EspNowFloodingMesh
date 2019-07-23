@@ -2,7 +2,7 @@
 
 
 Includes:
-- ESPNOW mesh usb adapter codes (esp32/esp2866).
+- Mesh usb adapter codes (esp32/esp2866).
 - Mesh gateway codes (Convert messages between mesh network and MQTT broker)
 - Slave node codes (Slave node can read sensors, control switches/lights or something else)
 
