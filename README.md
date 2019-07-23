@@ -1,5 +1,7 @@
 # EspNow flooding mesh
 
+Problems:
+- range is bad (both ESP now broadcast & 802.1 mac frame). Works fine on my desktop. 2m > not so well.
 
 Includes:
 - Mesh usb adapter codes (esp32/esp2866).
@@ -7,7 +9,7 @@ Includes:
 - Slave node codes (Slave node can read sensors, control switches/lights or something else)
 
 ##### Features:
-- Works on 802.11 mac frame
+- Works on 802.11 mac frame or ESP now broadcast
 - Nearly instant connection after poweron
 - Maximum number of slave nodes: unlimited
 - All nodes have the same bsid
