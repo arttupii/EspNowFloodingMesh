@@ -99,8 +99,7 @@ void loop() {
         cmd.send("ACK", "INVALID PARAM");
       } else {
         ttl = atoi(p1);
-        sscanf(p2, "%u", &replyPrt);
-
+        replyPrt = Commands::sTolUint(p2);
         espNowFloodingMesh_sendReply((uint8_t*)binary, size, ttl, replyPrt);
         cmd.send("ACK", buf);
       }
@@ -117,7 +116,7 @@ void loop() {
         initialized = true;
         espNowFloodingMesh_secredkey(secredKey);
         espNowFloodingMesh_setAesInitializationVector(iv);
-        espNowFloodingMesh_begin(channel, bsid);
+        espNowFloodingMesh_begin(channel);//, bsid);
         cmd.send("ACK");
       } else {
         cmd.send("NACK", "REBOOT NEEDED");
@@ -128,8 +127,7 @@ void loop() {
         sprintf(buf, "%lu", t);
         cmd.send("ACK", buf);
       } else if (strcmp(p1, "SET") == 0) {
-        time_t t;
-        sscanf(p2, "%lu", &t);
+        time_t t= Commands::sTolUint(p2);
         espNowFloodingMesh_setRTCTime(t);
         sprintf(buf, "%lu", t);
         cmd.send("ACK", buf);
@@ -139,7 +137,7 @@ void loop() {
     } else if (strcmp(cmdName, "KEY") == 0) {
       if (strcmp(p1, "SET") == 0) {
         if (size == sizeof(secredKey)) {
-          memcpy(secredKey, binary, size);
+          memcpy(secredKey, binary, sizeof(secredKey));
           espNowFloodingMesh_secredkey(secredKey);
           cmd.send("ACK");
         } else {
@@ -159,7 +157,7 @@ void loop() {
     else if (strcmp(cmdName, "IV") == 0) {
       if (strcmp(p1, "SET") == 0) {
         if (size == sizeof(secredKey)) {
-          memcpy(iv, binary, size);
+          memcpy(iv, binary, sizeof(iv));
           espNowFloodingMesh_setAesInitializationVector(iv);
           cmd.send("ACK");
         } else {
