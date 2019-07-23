@@ -177,7 +177,7 @@ function reboot() {
             }
         });
       }).timeout(
-    1000, "Reboot operation timed out").then(function(){
+    3000, "Reboot operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);

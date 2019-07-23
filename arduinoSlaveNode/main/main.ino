@@ -8,7 +8,7 @@ unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0
 unsigned char iv[16] = {0xb2, 0x4b, 0xf2, 0xf7, 0x7a, 0xc5, 0xec, 0x0c, 0x5e, 0x1f, 0x4d, 0xc1, 0xae, 0x46, 0x5e, 0x75};;
 const int ttl = 3;
 //char bsid[] = {0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06};
-char bsid[] = {0x42,0x34,0x3A,0x45,0x36,0x3A};
+char bsid[] = {0x42, 0x34, 0x3A, 0x45, 0x36, 0x3A};
 /*****************************/
 
 #define LED 1 /*LED pin*/
@@ -18,7 +18,7 @@ SimpleMQTT simpleMqtt = SimpleMQTT(ttl, deviceName);
 
 void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   if (len > 0) {
-   simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
+    simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
   }
 }
 
@@ -35,7 +35,7 @@ void setup() {
   espNowFloodingMesh_secredkey(secredKey);
   espNowFloodingMesh_setAesInitializationVector(iv);
   espNowFloodingMesh_setToMasterRole(false, ttl);
-  espNowFloodingMesh_begin(ESP_NOW_CHANNEL, bsid);
+  espNowFloodingMesh_begin(ESP_NOW_CHANNEL);//, bsid);
 
   espNowFloodingMesh_ErrorDebugCB([](int level, const char *str) {
     Serial.print(level); Serial.println(str); //If you want print some debug prints
@@ -52,18 +52,18 @@ void setup() {
   simpleMqtt.handleSubscribeAndGetEvents([](const char *topic, const char* value) {
     if (simpleMqtt.compareTopic(topic, deviceName, "/led/value")) { //subscribed  initial value for led.
       if (strcmp("on", value) == 0) { //check value and set led
-        ledValue=true;
+        ledValue = true;
       }
       if (strcmp("off", value) == 0) {
-        ledValue=false;
+        ledValue = false;
       }
     }
     if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) {
       if (strcmp("on", value) == 0) { //check value and set led
-        setLed=true;
+        setLed = true;
       }
       if (strcmp("off", value) == 0) {
-        setLed=false;
+        setLed = false;
       }
     }
   });
@@ -72,15 +72,15 @@ void setup() {
   simpleMqtt.handlePublishEvents([](const char *topic, const char* value) {
     if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) {
       if (strcmp("on", value) == 0) { //check value and set led
-        setLed=true;
+        setLed = true;
       }
       if (strcmp("off", value) == 0) {
-        setLed=false;
+        setLed = false;
       }
     }
   });
-  bool success = simpleMqtt.subscribeTopic(deviceName,"/led/set"); //Subscribe the led state from MQTT server device1/led/set
-  success = simpleMqtt.subscribeTopic(deviceName,"/led/value"); //Subscribe the led state from MQTT server (topic is device1/led/set)
+  bool success = simpleMqtt.subscribeTopic(deviceName, "/led/set"); //Subscribe the led state from MQTT server device1/led/set
+  success = simpleMqtt.subscribeTopic(deviceName, "/led/value"); //Subscribe the led state from MQTT server (topic is device1/led/set)
 
   //simpleMqtt.unsubscribeTopic(deviceName,"/led/value"); //unsubscribe
 }
@@ -94,15 +94,15 @@ void loop() {
 
   if (p == '0' && buttonStatechange == false) {
     buttonStatechange = true;
-    setLed=true;
+    setLed = true;
   }
   if (p == '1' && buttonStatechange == true) {
     buttonStatechange = false;
-    setLed=false;
+    setLed = false;
   }
 
-  if(ledValue==true && setLed==false) {
-    ledValue=false;
+  if (ledValue == true && setLed == false) {
+    ledValue = false;
     //digitalWrite(LED,HIGH);
     if (!simpleMqtt.publish(deviceName, "/led/value", "off")) {
       Serial.println("Publish failed... Reboot");
@@ -110,15 +110,15 @@ void loop() {
       ESP.restart();
     }
   }
-  if(ledValue==false && setLed==true) {
-    ledValue=true;
+  if (ledValue == false && setLed == true) {
+    ledValue = true;
     //digitalWrite(LED,HIGH);
     if (!simpleMqtt.publish(deviceName, "/led/value", "on")) {
       Serial.println("Publish failed... Reboot");
       ESP.restart();
     }
   }
-  
+
   delay(100);
-  
+
 }
