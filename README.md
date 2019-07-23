@@ -3,6 +3,11 @@
 Problems:
 - range is bad (both ESP now broadcast & 802.1 mac frame). Works fine on my desktop. 2m > not so well.
 
+
+Ideas:
+- Use bluetooth instead of ESP now broadcast & 802.1 mac frame
+- Or cheap 433Mzh transmitter
+
 Includes:
 - Mesh usb adapter codes (esp32/esp2866).
 - Mesh gateway codes (Convert messages between mesh network and MQTT broker)
