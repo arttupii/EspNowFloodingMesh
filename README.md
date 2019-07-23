@@ -50,6 +50,38 @@ Includes:
       node index.js
 ```
 
+##### Installation
+1. Flash Usb adapter software (EspNowUsb/EspNowUsb.ino) to esp32 or esp2866. (You don't need change any parameters)
+2. Install gateway softwares to RaspberryPi
+```   cd gateway
+      sudo apt-get install mosquitto nodejs npm
+      npm install
+```
+3. Modify gateway/config.js file:
+  - set secredKey parameter (16 bytes)
+  - set initializationVector parameter (16 bytes).
+4. Start gateway software on RaspberryPi. Copy "char bsid[] = {0x42,0x14,0x3A,0x55,0x76,0x8A};" to notepad. You need this in the next step.
+```
+a@labra:~/git/EspNowUsb/gateway/node index.js
+begin /dev/ttyUSB0 115200
+Subscribe topic device1/led/value from cache
+Subscribe topic device1/led/set from cache
+reboot
+Role MASTER, ttl=NaN
+MAC GET
+SET BSID---> "{0x42,0x14,0x3A,0x55,0x76,0x8A}" (HOX!!! SET THIS VALUE TO ALL YOUR NODES --> "char bsid[] = {0x42,0x14,0x3A,0x55,0x76,0x8A};")
+InitializationVector [178,75,242,247,122,197,236,12,94,31,77,193,174,70,94,117]
+key [0,17,34,51,68,85,102,119,136,153,170,187,204,221,238,255]
+Channel 1;
+Init
+RTC 1563876153
+
+```
+5. Open slave node code (arduinoSlaveNode/main/main.ino) and modify deviceName, secredKey, iv, bsid and ESP_NOW_CHANNEL paramaters.
+  * deviceName should be unique
+  * secredKey, iv, bsid and ESP_NOW_CHANNEL must be match to config.js file on raspberryPi. Otherwise mesh network won't work.
+  --> Flash slave node
+
 ```
  ____________________________________
 (                                    )

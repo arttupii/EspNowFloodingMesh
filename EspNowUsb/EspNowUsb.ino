@@ -1,7 +1,18 @@
 #include <EspNowFloodingMesh.h>
 #include <CommandParser.h>
 Commands cmd;
-char bsid[] = {0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06};
+char bsid[] = {0xb1, 0xde, 0xaf, 0xfe, 0x00, 0x06};
+//char bsid[] = {0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06};
+/*
+ROLE MASTER;
+BSID SET [ba,de,af,fe,00,06];
+BSID SET [42,34,3A,45,36,3A];
+ */
+#ifdef ESP32
+#include <WiFi.h>
+#else
+#include <ESP8266WiFi.h>
+#endif
 
 #define ESP_NOW_CHANNEL 1
 //AES 128bit
@@ -159,7 +170,7 @@ void loop() {
       } else {
         cmd.send("NACK", "PARAM");
       }
-    } 
+    }
     else if (strcmp(cmdName, "BSID") == 0) {
       if (strcmp(p1, "SET") == 0) {
         if (size == sizeof(bsid)) {
@@ -173,6 +184,9 @@ void loop() {
       } else {
         cmd.send("NACK", "PARAM");
       }
+    } else if (strcmp(cmdName, "MAC") == 0) {
+      String mac = WiFi.macAddress();
+      cmd.send("ACK", (const unsigned char *)mac.c_str(), 6);
     }
     else {
       cmd.send("NACK", "INVALID COMMAND"); //Handle invalid command

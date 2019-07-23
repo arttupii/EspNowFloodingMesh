@@ -106,7 +106,7 @@ function init() {
             }
         })
       }).timeout(
-    1000, "Init operation timed out").then(function(){
+    5000, "Init operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -213,7 +213,12 @@ function setKey(key) {
 }
 function setBSID(bsid) {
     return mutex(true).then(function(done){
-    console.info("BSID %j", bsid);
+
+      var h = "{" + _.map(bsid,function(a){
+          return "0x"+a.toString(16).toUpperCase();
+      }).join(",")+"}";
+
+    console.info("SET BSID---> %j (HOX!!! SET THIS VALUE TO ALL YOUR NODES --> \"char bsid[] = %s;\")", h,h);
 
     if(bsid.length!==6) return Promise.reject("Invalid key size");
 
@@ -396,6 +401,29 @@ function getRTC(message) {
     });
 });
 }
+function getMAC() {
+    return mutex(true).then(function(done){
+    console.info("MAC GET");
+
+    port.write("MAC;");
+    return new Promise(function(resolve, reject){
+        return waitAckNack()
+        .then(function(p){
+            if(p[0]==="ACK") {
+                resolve(p[1]);
+            } {
+               reject("MAC GET FAILED");
+            }
+        });
+      }).timeout(
+    1000, "MAC GET operation timed out").then(function(ret){
+      mutex(false);
+      return ret;
+    }).error(function(e){
+        return Promise.reject(e);
+    });
+});
+}
 
 function setRTC(epoch) {
     return mutex(true).then(function(done){
@@ -435,6 +463,7 @@ module.exports.getRTC = getRTC;
 module.exports.setRTC = setRTC;
 module.exports.setInitializationVector = setInitializationVector;
 module.exports.setBSID = setBSID;
+module.exports.getMAC = getMAC;
 module.exports.send = send;
 module.exports.req = request;
 module.exports.reply = reply;

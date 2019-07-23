@@ -21,10 +21,13 @@ function setup() {
      return si.reboot().delay(3000);
   })
   .then(function(){
-      return si.role("master",3);
+      return si.role("master");
   })
   .then(function(){
-      return si.setBSID(config.mesh.bsid);
+      return si.getMAC();
+  })
+  .then(function(mac){
+      return si.setBSID(mac);
   })
   .then(function(){
     return si.setInitializationVector(config.mesh.initializationVector);
