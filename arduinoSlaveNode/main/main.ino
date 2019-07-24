@@ -2,13 +2,16 @@
 #include<SimpleMqtt.h>
 
 /********NODE SETUP********/
-#define ESP_NOW_CHANNEL 1
 const char deviceName[] = "device2";
+
+#if 0
+#define ESP_NOW_CHANNEL 1
 unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 unsigned char iv[16] = {0xb2, 0x4b, 0xf2, 0xf7, 0x7a, 0xc5, 0xec, 0x0c, 0x5e, 0x1f, 0x4d, 0xc1, 0xae, 0x46, 0x5e, 0x75};;
 const int ttl = 3;
-//char bsid[] = {0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06};
-char bsid[] = {0x42, 0x34, 0x3A, 0x45, 0x36, 0x3A};
+#else
+#include "/home/arttu/git/myEspNowMeshConfig.h" //My secred mesh setup...
+#endif
 /*****************************/
 
 #define LED 1 /*LED pin*/
@@ -79,10 +82,14 @@ void setup() {
       }
     }
   });
-  bool success = simpleMqtt.subscribeTopic(deviceName, "/led/set"); //Subscribe the led state from MQTT server device1/led/set
-  success = simpleMqtt.subscribeTopic(deviceName, "/led/value"); //Subscribe the led state from MQTT server (topic is device1/led/set)
 
-  //simpleMqtt.unsubscribeTopic(deviceName,"/led/value"); //unsubscribe
+  /*
+  bool success = simpleMqtt.subscribeTopic(deviceName, "/switch/led/set"); //Subscribe the led state from MQTT server device1/switch/led/set
+  success = simpleMqtt.getTopic(deviceName, "/led/switch/value"); //Get the led state from MQTT server (topic is device1/switch/led/value)
+  */
+  if(simpleMqtt._switch(SUBSCRIBE, "led")) { //Same as the upper, but the smarter way
+    Serial.println("MQTT operation failed. No connection to gateway");
+  }
 }
 
 bool buttonStatechange = false;
@@ -104,7 +111,13 @@ void loop() {
   if (ledValue == true && setLed == false) {
     ledValue = false;
     //digitalWrite(LED,HIGH);
-    if (!simpleMqtt.publish(deviceName, "/led/value", "off")) {
+    /*if (!simpleMqtt.publish(deviceName, "/led/value", "off")) {
+      Serial.println("Publish failed... Reboot");
+      Serial.println(ESP.getFreeHeap());
+      ESP.restart();
+    }*/
+    //The better way to publish
+    if (!simpleMqtt._switch(PUBLISH,"led", SWITCH_OFF)) {
       Serial.println("Publish failed... Reboot");
       Serial.println(ESP.getFreeHeap());
       ESP.restart();
@@ -113,8 +126,14 @@ void loop() {
   if (ledValue == false && setLed == true) {
     ledValue = true;
     //digitalWrite(LED,HIGH);
-    if (!simpleMqtt.publish(deviceName, "/led/value", "on")) {
+    /*if (!simpleMqtt.publish(deviceName, "/led/value", "on")) {
       Serial.println("Publish failed... Reboot");
+      ESP.restart();
+    }*/
+    //The better way to publish
+    if (!simpleMqtt._switch(PUBLISH,"led", SWITCH_ON)) {
+      Serial.println("Publish failed... Reboot");
+      Serial.println(ESP.getFreeHeap());
       ESP.restart();
     }
   }
