@@ -84,6 +84,69 @@ RTC 1563876153
   * secredKey, iv, bsid and ESP_NOW_CHANNEL must be match to config.js file on raspberryPi. Otherwise mesh network won't work.
   --> Flash slave node
 
+
+### Recommended topics for switches, sensors and so on (just because of compatibility)
+```
+[device/nodename]/[type]/[sensorOrSwitchName]/[value/set] value
+
+***SWITCH***
+device1/switch/lamp1/value on
+device1/switch/lamp1/value off       <--Current lamp state (only node should change this!)
+device1/switch/lamp1/set on          <--Request set lamp on from outside
+device1/switch/lamp1/set off         <--Request set lamp off from outside
+device1/switch/alarm/value off       <--Current lamp state (only node should change this!)
+device1/switch/alarm/value on       <--Current lamp state (only node should change this!)
+device1/switch/alarm/set on          <--Request set lamp on from outside
+
+***TEMPERATURE SENSORS***
+device1/temp/outside/value 24.8   <--Celsius
+device1/humidity/bedroom/value 55        <--percentage
+
+device1/temp/thermostat1/set 21.2  <--Set thermostat
+
+***TRIGGER***
+device1/trigger/pirSensor1/value "on" <--Trigger to outside. For example pulse from pir-sensor. 
+device1/trigger/pirSensor1/value "off" <--Trigger to outside. For example pulse from pir-sensor 
+
+***CONTACT***
+device1/contact/switch1/value open
+device1/contact/switch1/value closed
+
+***DIMMER***
+device1/dimmer/myDimmer1/value 0     <--min value==off
+device1/dimmer/myDimmer1/value 255   <--max value==on
+device1/dimmer/myDimmer1/set 0     <--min value==off
+device1/dimmer/myDimmer1/set 255   <--max value==on
+
+***STRING***
+device1/string/message/value HelloWorld!      <--(only node should change this!)
+device1/string/screen/set HelloWorld!      <--(short string message from outside)
+
+***NUMBER***
+device1/number/thing/value min,max,step      <--(number message to outside)
+device1/number/thing/set min,max,step      <--(number message from outside)
+
+***FLOAT***
+device1/float/thing1/value 343.23      <--(number message to outside)
+device1/float/thing1/set 123.32      <--(number message from outside)
+
+***INT***
+device1/int/thing1/value 123      <--(int message to outside)
+device1/int/thing1/set 456      <--(int message from outside)
+
+***ROLLERSHUTTER***
+device1/shutter/myrollershutter/set open
+device1/shutter/myrollershutter/set close
+device1/shutter/myrollershutter/set stop
+device1/shutter/myrollershutter/value open
+device1/shutter/myrollershutter/value close
+device1/shutter/myrollershutter/value stop
+
+***Counter***
+device1/counter/gasMeter/value 23412343252      <--(gasMeter value to outside)
+device1/counter/gasMeter/value 23412343252      <--(gasMeter value to outside)
+```
+
 ```
  ____________________________________
 (                                    )
