@@ -60,6 +60,7 @@ function initMqttCacheObject(shortTopic){
 }
 
 function updateValueMqttCache(shortTopic, value) {
+  console.info("updateValueMqttCache shortTopic:%s, value=\"%s\"",shortTopic, value);
   initMqttCacheObject(shortTopic);
   mqttCache[shortTopic].value = value;
   mqttCache[shortTopic].lastUpdate = new Date(Date.now()).toString();
@@ -92,10 +93,10 @@ function generateDataUpdateMsg(shortTopic, value, buffer) {
   if(buffer!==undefined) {
     if(buffer=="") {
       buffer+="MQTT MASTER\n";
-      return buffer+="P:"+shortTopic+":"+value+"\n";
+      return buffer+="P:"+shortTopic+" "+value+"\n";
     }
   }
-  return "MQTT MASTER\nP:"+shortTopic+":"+value+"\n";
+  return "MQTT MASTER\nP:"+shortTopic+" "+value+"\n";
 }
 
 client.on('message', function (topic, message) {
@@ -138,13 +139,14 @@ client.on('message', function (topic, message) {
 });
 
 
-function parse(simpleMqtt, replyId, data) {
+function parse(replyId, data) {
   var str = _.map(data,function(c){
     return String.fromCharCode(c);
   }).join("");
   var deviceName = "";
 
   console.info("Parse: ", str);
+
   if(str.indexOf("MQTT")===0) {
     var subscribedTopics = []
     _.each(str.split("\n"), function(c){
@@ -156,20 +158,33 @@ function parse(simpleMqtt, replyId, data) {
       }
       if(c.indexOf("S:")===0||c.indexOf("P:")===0||c.indexOf("U:")===0||c.indexOf("G:")===0) {
         var s = c.split(":");
+        var value="", shortTopic="";
+        if(s[1]!==undefined){
+          var e = s[1].indexOf(" ");
+          if(e==-1) {
+            e = s[1].length;
+          }
+          shortTopic = s[1].substring(0,e);
+          value = s[1].substring(s[1].indexOf(" ")+1);
+        }
         if(s[0]==="S") {
-          console.info("Subscribe ", config.mqtt.root+s[1]);
-          client.subscribe(config.mqtt.root+s[1]);
-          subscribedTopics.push(s[1]);
-          addSubscriber(s[1], deviceName);
+          console.info("Subscribe ", config.mqtt.root+shortTopic);
+          client.subscribe(config.mqtt.root+shortTopic);
+          subscribedTopics.push(shortTopic);
+          addSubscriber(shortTopic, deviceName);
+        }
+        if(s[0]==="G") {
+          console.info(s);
+          console.info("Get ", config.mqtt.root+shortTopic);
+          subscribedTopics.push(shortTopic);
         }
         if(s[0]==="P") {
-          console.info("Publish ", config.mqtt.root+s[1],s[2]);
-          client.publish(config.mqtt.root+s[1],s[2]);
-          updateValueMqttCache(s[1], s[2]);
+          client.publish(config.mqtt.root+shortTopic,value);
+          updateValueMqttCache(shortTopic, value);
         }
         if(s[0]==="U") { //Unsubscribe
-          console.info("Unsubscribe ", config.mqtt.root+s[1],s[2]);
-          deleteSubscriber(s[1], deviceName);
+          console.info("Unsubscribe ", config.mqtt.root+shortTopic);
+          deleteSubscriber(shortTopic, deviceName);
         }
         updateErrorMqttCache(s[1], "OK");
       }

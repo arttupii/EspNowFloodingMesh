@@ -7,7 +7,7 @@ const config = require("./config.js")
 si.begin(config.usbPort);
 si.receiveCallback(function(replyId, data){
     console.info("Received: %j", data);
-    simpleMqtt.parse(si, replyId, data);
+    simpleMqtt.parse(replyId, data);
 });
 
 function setup() {

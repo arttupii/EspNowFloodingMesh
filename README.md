@@ -105,8 +105,8 @@ device1/humidity/bedroom/value 55        <--percentage
 device1/temp/thermostat1/set 21.2  <--Set thermostat
 
 ***TRIGGER***
-device1/trigger/pirSensor1/value "on" <--Trigger to outside. For example pulse from pir-sensor. 
-device1/trigger/pirSensor1/value "off" <--Trigger to outside. For example pulse from pir-sensor 
+device1/trigger/pirSensor1/value "on" <--Trigger to outside. For example pulse from pir-sensor.
+device1/trigger/pirSensor1/value "off" <--Trigger to outside. For example pulse from pir-sensor
 
 ***CONTACT***
 device1/contact/switch1/value open
@@ -190,14 +190,30 @@ const int ttl = 3;
 
 /*****************************/
 
-#define LED 1 /*LED pin*/
-#define BUTTON_PIN 0
+#include <EspNowFloodingMesh.h>
+#include<SimpleMqtt.h>
+
+/********NODE SETUP********/
+const char deviceName[] = "device1";
+
+#if 1
+#define ESP_NOW_CHANNEL 1
+unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+unsigned char iv[16] = {0xb2, 0x4b, 0xf2, 0xf7, 0x7a, 0xc5, 0xec, 0x0c, 0x5e, 0x1f, 0x4d, 0xc1, 0xae, 0x46, 0x5e, 0x75};;
+const int ttl = 3;
+#else
+#include "/home/arttu/git/myEspNowMeshConfig.h" //My secred mesh setup...
+#endif
+/*****************************/
+
+#define LED 1 
+#define BUTTON_PIN 2
 
 SimpleMQTT simpleMqtt = SimpleMQTT(ttl, deviceName);
 
 void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
   if (len > 0) {
-   simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
+    simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
   }
 }
 
@@ -206,8 +222,8 @@ bool ledValue;
 void setup() {
   Serial.begin(115200);
 
-  //pinMode(LED, OUTPUT);
-  //pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(LED, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   //Set device in AP mode to begin with
   espNowFloodingMesh_RecvCB(espNowFloodingMeshRecv);
@@ -227,41 +243,29 @@ void setup() {
     ESP.restart();
   }
 
-  //Handle MQTT events from master. Do not call publish inside of call back. --> Endless event loop and crash
-  simpleMqtt.handleSubscribeAndGetEvents([](const char *topic, const char* value) {
-    if (simpleMqtt.compareTopic(topic, deviceName, "/led/value")) { //subscribed  initial value for led.
-      if (strcmp("on", value) == 0) { //check value and set led
-        ledValue=true;
+  //Handle MQTT events from master. Do not call publish() inside of call back. --> Endless event loop and crash
+  simpleMqtt.handleEvents([](const char *topic, const char* value) {
+    simpleMqtt._ifSwitch(VALUE, "led", [](MQTT_switch value){ //<--> Listening topic switch/led/value/value
+      if(value==SWITCH_ON) {
+        ledValue = true;
       }
-      if (strcmp("off", value) == 0) {
-        ledValue=false;
+      if(value==SWITCH_OFF) {
+        ledValue = false;
       }
-    }
-    if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) {
-      if (strcmp("on", value) == 0) { //check value and set led
-        setLed=true;
+    });
+    simpleMqtt._ifSwitch(SET, "led", [](MQTT_switch set){ //<-->Listening topic device1/switch/led/set
+      if(set==SWITCH_ON) {
+        setLed = true;
       }
-      if (strcmp("off", value) == 0) {
-        setLed=false;
+      if(set==SWITCH_OFF) {
+        setLed = false;
       }
-    }
+    });
   });
 
-  //Handle MQTT events from master
-  simpleMqtt.handlePublishEvents([](const char *topic, const char* value) {
-    if (simpleMqtt.compareTopic(topic, deviceName, "/led/set")) {
-      if (strcmp("on", value) == 0) { //check value and set led
-        setLed=true;
-      }
-      if (strcmp("off", value) == 0) {
-        setLed=false;
-      }
-    }
-  });
-  bool success = simpleMqtt.subscribeTopic(deviceName,"/led/set"); //Subscribe the led state from MQTT server device1/led/set
-  success = simpleMqtt.subscribeTopic(deviceName,"/led/value"); //Subscribe the led state from MQTT server (topic is device1/led/set)
-
-  //simpleMqtt.unsubscribeTopic(deviceName,"/led/value"); //unsubscribe
+  if (!simpleMqtt._switch(SUBSCRIBE, "led")) { //Subscribe topic device1/switch/led/set and get topic device1/switch/led/value from cache
+    Serial.println("MQTT operation failed. No connection to gateway");
+  }
 }
 
 bool buttonStatechange = false;
@@ -269,35 +273,39 @@ bool buttonStatechange = false;
 void loop() {
   espNowFloodingMesh_loop();
 
-  int p = Serial.read();//digitalRead(BUTTON_PIN);
+  int p = digitalRead(BUTTON_PIN);
 
-  if (p == '0' && buttonStatechange == false) {
+  if (p == HIGH && buttonStatechange == false) {
     buttonStatechange = true;
-    setLed=true;
+    setLed = true;
   }
-  if (p == '1' && buttonStatechange == true) {
+  if (p == LOW && buttonStatechange == true) {
     buttonStatechange = false;
-    setLed=false;
+    setLed = false;
   }
 
-  if(ledValue==true && setLed==false) {
-    ledValue=false;
+  if (ledValue == true && setLed == false) {
+    ledValue = false;
+    Serial.println("LED_OFF");
     //digitalWrite(LED,HIGH);
-    if (!simpleMqtt.publish(deviceName, "/led/value", "off")) {
+    if (!simpleMqtt._switch(PUBLISH, "led", SWITCH_OFF)) { //publish topic device1/switch/led/value off
       Serial.println("Publish failed... Reboot");
+      Serial.println(ESP.getFreeHeap());
       ESP.restart();
     }
   }
-  if(ledValue==false && setLed==true) {
-    ledValue=true;
-    //digitalWrite(LED,HIGH);
-    if (!simpleMqtt.publish(deviceName, "/led/value", "on")) {
+  if (ledValue == false && setLed == true) {
+    ledValue = true;
+    Serial.println("LED_ON");
+    if (!simpleMqtt._switch(PUBLISH, "led", SWITCH_ON)) { //publish topic device1/switch/led/value on
       Serial.println("Publish failed... Reboot");
+      Serial.println(ESP.getFreeHeap());
       ESP.restart();
     }
   }
 
-  delay(10);
+  delay(100);
+
 }
 ```
 #### Config file for MeshGateway on RasperryPi
