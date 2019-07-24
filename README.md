@@ -1,16 +1,14 @@
-# EspNow flooding mesh
-
+# Arduino EspNow flooding mesh network
 
 Includes:
-- Mesh usb adapter codes (esp32/esp2866).
+- Mesh usb adapter codes (for esp32/esp2866).
 - Mesh gateway codes (Convert messages between mesh network and MQTT broker)
 - Slave node codes (Slave node can read sensors, control switches/lights or something else)
 
 ##### Features:
-- Works on ESP now broadcast (or 802.11 mac frame)
+- Works on EspNow broadcast
 - Nearly instant connection after poweron
 - Maximum number of slave nodes: unlimited
-- All nodes have the same bsid
 - Flooding mesh support
 - Mesh nodes use MQTT service (subscribe/publish)
 - Master node (USBAdapter=ESP32 or ESP2866) is connected to RaspberryPi's USB port
@@ -23,11 +21,40 @@ Includes:
 - Retransmission support
 - Request/Reply support
 - Send and pray support (Send a message to all nodes without reply/ack)
-- Easy to configure
+- Easy to configure (just set channel and secure keys)
 - Simple mqqt interface.
-- Automatic node discovery
+- Automatic node discovery (You find the detected nodes in cache.json on RaspberryPI)
 - MQTT local cache on raspberry
 - Arduino
+
+```
+ ____________________________________
+(                                    )
+|                                    |
+(            Internet                )
+|                                    |
+(____________________________________)
+                     ^
+                     |MQTT
+                     |
++--------------------|-------+
+| RaspberryPi        V       |
+|-------------+   +--+-------|
+| MeshGateway |<->| MQTT     |     +-------------------------------------+
+|             |   | broker   |     |    ESPNOW mesh network              |
++-----+-------+---+----------+     |                             Node6   |
+      ^                            |     Node1        Node3              |
+      |    USB(SerialData)         |  +------------+   Node3     Node5   |
+      +------------------------------>| USBAdapter |           Node4     |
+                                   |  | (Master)   |  NodeX    Node7     |
+                                   |  +------------+                     |
+                                   +-------------------------------------+
+```           
+###### Arduino libraries:
+- https://github.com/arttupii/espNowFloodingMeshLibrary
+- https://github.com/arttupii/ArduinoCommands
+- https://github.com/arttupii/SimpleMqttLibrary
+- https://github.com/kakopappa/arduino-esp8266-aes-lib (Only ESP2866)
 
 ###### Slave Node examples
 - PIR-sensor node: https://github.com/arttupii/PirSendorNode
@@ -85,95 +112,7 @@ RTC 1563876153
   --> Flash slave node
 
 
-### Recommended topics for switches, sensors and so on (just because of compatibility)
-```
-[device/nodename]/[type]/[sensorOrSwitchName]/[value/set] value
-
-***SWITCH***
-device1/switch/lamp1/value on
-device1/switch/lamp1/value off       <--Current lamp state (only node should change this!)
-device1/switch/lamp1/set on          <--Request set lamp on from outside
-device1/switch/lamp1/set off         <--Request set lamp off from outside
-device1/switch/alarm/value off       <--Current lamp state (only node should change this!)
-device1/switch/alarm/value on       <--Current lamp state (only node should change this!)
-device1/switch/alarm/set on          <--Request set lamp on from outside
-
-***TEMPERATURE SENSORS***
-device1/temp/outside/value 24.8   <--Celsius
-device1/humidity/bedroom/value 55        <--percentage
-
-device1/temp/thermostat1/set 21.2  <--Set thermostat
-
-***TRIGGER***
-device1/trigger/pirSensor1/value "on" <--Trigger to outside. For example pulse from pir-sensor.
-device1/trigger/pirSensor1/value "off" <--Trigger to outside. For example pulse from pir-sensor
-
-***CONTACT***
-device1/contact/switch1/value open
-device1/contact/switch1/value closed
-
-***DIMMER***
-device1/dimmer/myDimmer1/value 0     <--min value==off
-device1/dimmer/myDimmer1/value 255   <--max value==on
-device1/dimmer/myDimmer1/set 0     <--min value==off
-device1/dimmer/myDimmer1/set 255   <--max value==on
-
-***STRING***
-device1/string/message/value HelloWorld!      <--(only node should change this!)
-device1/string/screen/set HelloWorld!      <--(short string message from outside)
-
-***NUMBER***
-device1/number/thing/value min,max,step      <--(number message to outside)
-device1/number/thing/set min,max,step      <--(number message from outside)
-
-***FLOAT***
-device1/float/thing1/value 343.23      <--(number message to outside)
-device1/float/thing1/set 123.32      <--(number message from outside)
-
-***INT***
-device1/int/thing1/value 123      <--(int message to outside)
-device1/int/thing1/set 456      <--(int message from outside)
-
-***ROLLERSHUTTER***
-device1/shutter/myrollershutter/set open
-device1/shutter/myrollershutter/set close
-device1/shutter/myrollershutter/set stop
-device1/shutter/myrollershutter/value open
-device1/shutter/myrollershutter/value close
-device1/shutter/myrollershutter/value stop
-
-***Counter***
-device1/counter/gasMeter/value 23412343252      <--(gasMeter value to outside)
-device1/counter/gasMeter/value 23412343252      <--(gasMeter value to outside)
-```
-
-```
- ____________________________________
-(                                    )
-|                                    |
-(            Internet                )
-|                                    |
-(____________________________________)
-                     ^
-                     |MQTT
-                     |
-+--------------------|-------+
-| RaspberryPi        V       |
-|-------------+   +--+-------|
-| MeshGateway |<->| MQTT     |     +-------------------------------------+
-|             |   | broker   |     |    ESPNOW mesh network              |
-+-----+-------+---+----------+     |                             Node6   |
-      ^                            |     Node1        Node3              |
-      |    USB(SerialData)         |  +------------+   Node3     Node5   |
-      +------------------------------>| USBAdapter |           Node4     |
-                                   |  | (Master)   |  NodeX    Node7     |
-                                   |  +------------+                     |
-                                   +-------------------------------------+
-```               
-###### Arduino libraries:
-- https://github.com/arttupii/espNowFloodingMeshLibrary
-- https://github.com/arttupii/ArduinoCommands
-- https://github.com/arttupii/SimpleMqttLibrary
+    
 
 
 ###### Slave node code example
@@ -324,6 +263,70 @@ module.exports = {
   }
 }
 ```
+
+
+### Recommended topics for switches, sensors and so on (just because of compatibility)
+```
+[device/nodename]/[type]/[sensorOrSwitchName]/[value/set] value
+
+***SWITCH***
+device1/switch/lamp1/value on
+device1/switch/lamp1/value off       <--Current lamp state (only node should change this!)
+device1/switch/lamp1/set on          <--Request set lamp on from outside
+device1/switch/lamp1/set off         <--Request set lamp off from outside
+device1/switch/alarm/value off       <--Current lamp state (only node should change this!)
+device1/switch/alarm/value on       <--Current lamp state (only node should change this!)
+device1/switch/alarm/set on          <--Request set lamp on from outside
+
+***TEMPERATURE SENSORS***
+device1/temp/outside/value 24.8   <--Celsius
+device1/humidity/bedroom/value 55        <--percentage
+
+device1/temp/thermostat1/set 21.2  <--Set thermostat
+
+***TRIGGER***
+device1/trigger/pirSensor1/value "on" <--Trigger to outside. For example pulse from pir-sensor.
+device1/trigger/pirSensor1/value "off" <--Trigger to outside. For example pulse from pir-sensor
+
+***CONTACT***
+device1/contact/switch1/value open
+device1/contact/switch1/value closed
+
+***DIMMER***
+device1/dimmer/myDimmer1/value 0     <--min value==off
+device1/dimmer/myDimmer1/value 255   <--max value==on
+device1/dimmer/myDimmer1/set 0     <--min value==off
+device1/dimmer/myDimmer1/set 255   <--max value==on
+
+***STRING***
+device1/string/message/value HelloWorld!      <--(only node should change this!)
+device1/string/screen/set HelloWorld!      <--(short string message from outside)
+
+***NUMBER***
+device1/number/thing/value min,max,step      <--(number message to outside)
+device1/number/thing/set min,max,step      <--(number message from outside)
+
+***FLOAT***
+device1/float/thing1/value 343.23      <--(number message to outside)
+device1/float/thing1/set 123.32      <--(number message from outside)
+
+***INT***
+device1/int/thing1/value 123      <--(int message to outside)
+device1/int/thing1/set 456      <--(int message from outside)
+
+***ROLLERSHUTTER***
+device1/shutter/myrollershutter/set open
+device1/shutter/myrollershutter/set close
+device1/shutter/myrollershutter/set stop
+device1/shutter/myrollershutter/value open
+device1/shutter/myrollershutter/value close
+device1/shutter/myrollershutter/value stop
+
+***Counter***
+device1/counter/gasMeter/value 23412343252      <--(gasMeter value to outside)
+device1/counter/gasMeter/value 23412343252      <--(gasMeter value to outside)
+```
+
 #### Example messages (USBAdapter)
 ##### Initialize mesh network
 ```
