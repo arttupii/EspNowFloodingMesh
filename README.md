@@ -108,7 +108,7 @@ RTC 1563876153
 ```
 5. Open slave node code (arduinoSlaveNode/main/main.ino) and modify deviceName, secredKey, iv and ESP_NOW_CHANNEL paramaters.
   * deviceName should be unique
-  * secredKey, iv, bsid and ESP_NOW_CHANNEL must be match to config.js file on raspberryPi. Otherwise mesh network won't work.
+  * secredKey, iv and ESP_NOW_CHANNEL must be match to config.js file on raspberryPi. Otherwise mesh network won't work.
   --> Flash slave node
 
 
