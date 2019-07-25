@@ -15,7 +15,7 @@ Includes:
 - Each Nodes can communicate with each other
 - ESP32, ESP2866, ESP01
 - Ping about 40-60ms
-- ttl
+- ttl support
 - Battery node support
 - AES128
 - Retransmission support
@@ -98,7 +98,8 @@ SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------Slav
 ###### MeshGateway software for RaspberryPi (conversation between mesh and mqtt broker)
  - https://github.com/arttupii/EspNowFloodingMesh/tree/master/gateway
  - See config.js file (https://github.com/arttupii/EspNowUsb/blob/master/RaspberryPiServer/config.js)
-```   cd gateway
+```   
+      cd gateway
       sudo apt-get install mosquitto nodejs npm
       nano config.js
       npm install
@@ -106,38 +107,57 @@ SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------Slav
 ```
 
 ##### Installation
-1. Flash Usb adapter software (EspNowUsb/EspNowUsb.ino) to esp32 or esp2866. (You don't need change any parameters)
-2. Install gateway softwares to RaspberryPi
-```   cd gateway
+0. Install Arduino and following dependencies:
+  - https://github.com/arttupii/espNowFloodingMeshLibrary
+  - https://github.com/arttupii/ArduinoCommands
+  - https://github.com/arttupii/SimpleMqttLibrary
+  - https://github.com/kakopappa/arduino-esp8266-aes-lib (Only ESP2866)
+1. Install esp8266 dev module. Use git version.
+  - Instructions: https://github.com/esp8266/Arduino
+2. Check Espressif FW version!!!. It should be nonos-sdk 2.2.1+100(testing).
+  ![alt text](https://github.com/arttupii/EspNowFloodingMesh/blob/master/pictures/ArduinoSetupForEsp2866.png)
+3. Add "https://dl.espressif.com/dl/package_esp32_dev_index.json" into the Additional Board Manager URLs field.
+  ![alt text](https://raw.githubusercontent.com/arttupii/EspNowFloodingMesh/master/pictures/ArduinoAdditionalURLs.png)
+4. Install esp32 dev module 1.0.3-rc1 from Arduino's Boards Manager.
+  ![alt text](https://raw.githubusercontent.com/arttupii/EspNowFloodingMesh/master/pictures/ArduinoBoardManager.png)
+5. Flash Usb adapter software (EspNowUsb/EspNowUsb.ino) on esp32/esp2866 (esp32 is the best choice.). (You don't need change any parameters)
+ - https://github.com/arttupii/EspNowFloodingMesh/tree/master/EspNowUsb
+6. Install mqtt broker, nodejs and npm on RaspberryPi
+```
       sudo apt-get install mosquitto nodejs npm
+```
+7. Get gateway and install npm modules
+* https://github.com/arttupii/EspNowFloodingMesh/tree/master/gateway
+```   
+      git clone git@github.com:arttupii/EspNowFloodingMesh.git
+      cd EspNowFloodingMesh
+      cd gateway
       npm install
 ```
-3. Modify gateway/config.js file:
+8. Modify gateway/config.js file:
   - set secredKey parameter (16 bytes)
   - set initializationVector parameter (16 bytes).
-4. Start gateway software on RaspberryPi. .
+9. Start gateway software on RaspberryPi. .
 ```
-a@labra:~/git/EspNowUsb/gateway/node index.js
-begin /dev/ttyUSB0 115200
-Subscribe topic device1/led/value from cache
-Subscribe topic device1/led/set from cache
-reboot
-Role MASTER, ttl=NaN
-MAC GET
-InitializationVector [178,75,242,247,122,197,236,12,94,31,77,193,174,70,94,117]
-key [0,17,34,51,68,85,102,119,136,153,170,187,204,221,238,255]
-Channel 1;
-Init
-RTC 1563876153
+      a@labra:~/git/EspNowUsb/gateway/node index.js
+      begin /dev/ttyUSB0 115200
+      Subscribe topic device1/led/value from cache
+      Subscribe topic device1/led/set from cache
+      reboot
+      Role MASTER, ttl=NaN
+      MAC GET
+      InitializationVector [178,75,242,247,122,197,236,12,94,31,77,193,174,70,94,117]
+      key [0,17,34,51,68,85,102,119,136,153,170,187,204,221,238,255]
+      Channel 1;
+      Init
+      RTC 1563876153
 
 ```
-5. Open slave node code (arduinoSlaveNode/main/main.ino) and modify deviceName, secredKey, iv and ESP_NOW_CHANNEL paramaters.
+10. Open slave node code (arduinoSlaveNode/main/main.ino) and modify deviceName, secredKey, iv and ESP_NOW_CHANNEL paramaters.
+  * https://github.com/arttupii/EspNowFloodingMesh/tree/master/arduinoSlaveNode/main
   * deviceName should be unique
   * secredKey, iv and ESP_NOW_CHANNEL must be match to config.js file on raspberryPi. Otherwise mesh network won't work.
   --> Flash slave node
-
-
-
 
 
 ###### Slave node code example
@@ -277,7 +297,7 @@ module.exports = {
 
 ### Recommended topics for switches, sensors and so on (just because of compatibility)
 ```
-[device/nodename]/[type]/[sensorOrSwitchName]/[value/set] value
+[nodename]/[type]/[sensorOrSwitchName]/[value or set] value
 
 ***SWITCH***
 device1/switch/lamp1/value on
