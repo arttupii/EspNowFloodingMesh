@@ -49,7 +49,32 @@ Includes:
                                    |  | (Master)   |  NodeX    Node7     |
                                    |  +------------+                     |
                                    +-------------------------------------+
-```           
+```     
+## Flooding mesh network
+In this network example ttl must be >= 5
+```
+               SlaveNode
+                   |
+                   |         Message from master to BatteryNode
+                   |   ---------------------------+
+                   | ttl=5               ttl=4    |
+SlaveNode-------MasterNode-------------SlaveNode  |
+                   |                     |        |
+                   |                     |        |
+                   |                     |        |
+                   |                     |        |
+               SlaveNode                 |        |
+                   |                     |        |
+                   |                     |        |
+                   |                     |        +------------------------------------------------>
+                   |                     | ttl=3         ttl=2              ttl=1
+SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------SlaveNode---------BatteryNode
+   |               |                     |
+   |               |                     |
+   |               |                     |
+   |               |                     |
+   +-----------SlaveNode-----------------+
+```        
 ###### Arduino libraries:
 - https://github.com/arttupii/espNowFloodingMeshLibrary
 - https://github.com/arttupii/ArduinoCommands
@@ -112,7 +137,7 @@ RTC 1563876153
   --> Flash slave node
 
 
-    
+
 
 
 ###### Slave node code example
@@ -129,23 +154,7 @@ const int ttl = 3;
 
 /*****************************/
 
-#include <EspNowFloodingMesh.h>
-#include<SimpleMqtt.h>
-
-/********NODE SETUP********/
-const char deviceName[] = "device1";
-
-#if 1
-#define ESP_NOW_CHANNEL 1
-unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
-unsigned char iv[16] = {0xb2, 0x4b, 0xf2, 0xf7, 0x7a, 0xc5, 0xec, 0x0c, 0x5e, 0x1f, 0x4d, 0xc1, 0xae, 0x46, 0x5e, 0x75};;
-const int ttl = 3;
-#else
-#include "/home/arttu/git/myEspNowMeshConfig.h" //My secred mesh setup...
-#endif
-/*****************************/
-
-#define LED 1 
+#define LED 1
 #define BUTTON_PIN 2
 
 SimpleMQTT simpleMqtt = SimpleMQTT(ttl, deviceName);
@@ -158,6 +167,7 @@ void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
 
 bool setLed;
 bool ledValue;
+
 void setup() {
   Serial.begin(115200);
 
@@ -233,6 +243,7 @@ void loop() {
       ESP.restart();
     }
   }
+
   if (ledValue == false && setLed == true) {
     ledValue = true;
     Serial.println("LED_ON");
@@ -244,7 +255,6 @@ void loop() {
   }
 
   delay(100);
-
 }
 ```
 #### Config file for MeshGateway on RasperryPi
