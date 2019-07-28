@@ -121,7 +121,7 @@ client.on('message', function (topic, message) {
       .then(function(){
         updateErrorMqttCache(shortTopic, "OK");
       })
-      .error(function (e) {
+      .catch(function (e) {
         console.info("No reply from node...");
         tryCnt--;
         if(tryCnt>0) {

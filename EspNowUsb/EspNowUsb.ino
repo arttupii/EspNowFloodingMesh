@@ -1,13 +1,8 @@
 #include <EspNowFloodingMesh.h>
 #include <CommandParser.h>
 Commands cmd;
-char bsid[] = {0xb1, 0xde, 0xaf, 0xfe, 0x00, 0x06};
-//char bsid[] = {0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06};
-/*
-ROLE MASTER;
-BSID SET [ba,de,af,fe,00,06];
-BSID SET [42,34,3A,45,36,3A];
- */
+int bsid = 0x112233;
+
 #ifdef ESP32
 #include <WiFi.h>
 #else
@@ -51,8 +46,6 @@ char buf[20];
 bool initialized = false;
 void loop() {
   espNowFloodingMesh_loop();
-  delay(1);
-
   cmd.handleInputCommands([](const char* cmdName, const char*p1, const char*p2, const char*p3, const unsigned char*binary, int size) {
 
     if (strcmp(cmdName, "PING") == 0) {
@@ -68,9 +61,9 @@ void loop() {
       }
     } else if (strcmp(cmdName, "ROLE") == 0) {
       if (strcmp(p1, "MASTER") == 0) {
-        int ttl = p2 == NULL ? 0 : atoi(p2);
+        int ttl = (p2 == NULL ? 0 : atoi(p2));
         espNowFloodingMesh_setToMasterRole(true, ttl);
-        cmd.send("ACK");
+        cmd.send("ACK", p2);
       } else   if (strcmp(p1, "SLAVE") == 0) {
         espNowFloodingMesh_setToMasterRole(false);
         cmd.send("ACK");
@@ -116,7 +109,7 @@ void loop() {
         initialized = true;
         espNowFloodingMesh_secredkey(secredKey);
         espNowFloodingMesh_setAesInitializationVector(iv);
-        espNowFloodingMesh_begin(channel);//, bsid);
+        espNowFloodingMesh_begin(channel, bsid);
         cmd.send("ACK");
       } else {
         cmd.send("NACK", "REBOOT NEEDED");
@@ -127,7 +120,7 @@ void loop() {
         sprintf(buf, "%lu", t);
         cmd.send("ACK", buf);
       } else if (strcmp(p1, "SET") == 0) {
-        time_t t= Commands::sTolUint(p2);
+        time_t t = Commands::sTolUint(p2);
         espNowFloodingMesh_setRTCTime(t);
         sprintf(buf, "%lu", t);
         cmd.send("ACK", buf);
@@ -171,14 +164,15 @@ void loop() {
     }
     else if (strcmp(cmdName, "BSID") == 0) {
       if (strcmp(p1, "SET") == 0) {
-        if (size == sizeof(bsid)) {
-          memcpy(bsid, binary, size);
+        if (strlen(p2)>0) {
+          bsid = atoi(p2);
           cmd.send("ACK");
         } else {
           cmd.send("NACK", "INVALID SIZE");
         }
       } else if (strcmp(p1, "GET") == 0) {
-        cmd.send("ACK", (unsigned char*)bsid, sizeof(bsid));
+        sprintf(buf, "%ud", bsid);
+        cmd.send("ACK", buf);
       } else {
         cmd.send("NACK", "PARAM");
       }

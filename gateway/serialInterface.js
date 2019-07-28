@@ -83,7 +83,7 @@ function ping() {
                     }
                 });
             }).timeout(
-            1000, "Ping operation timed out");
+            5000, "Ping operation timed out");
             port.write('PING;\n')
             return ret.then(function(){
               mutex(false);
@@ -133,7 +133,7 @@ function role(role, ttl) {
             }
         })
       }).timeout(
-    1000, "Role operation timed out").then(function(){
+    5000, "Role operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -155,7 +155,7 @@ function setChannel(c) {
             }
         })
       }).timeout(
-    1000, "Channel operation timed out").then(function(){
+    5000, "Channel operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -204,7 +204,7 @@ function setKey(key) {
             }
         });
       }).timeout(
-    1000, "Key operation timed out").then(function(){
+    5000, "Key operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -214,18 +214,9 @@ function setKey(key) {
 function setBSID(bsid) {
     return mutex(true).then(function(done){
 
-      var h = "{" + _.map(bsid,function(a){
-          return "0x"+a.toString(16).toUpperCase();
-      }).join(",")+"}";
+    console.info("SET BSID---> 0x%s", bsid.toString(16));
 
-    console.info("SET BSID---> %j (HOX!!! SET THIS VALUE TO ALL YOUR NODES --> \"char bsid[] = %s;\")", h,h);
-
-    if(bsid.length!==6) return Promise.reject("Invalid key size");
-
-    port.write("BSID SET [" + _.map(bsid,function(a){
-        return a.toString(16).toUpperCase();
-    }).join(",")+"];");
-
+    port.write("BSID SET " + bsid + ";");
     return new Promise(function(resolve, reject){
         return waitAckNack()
         .then(function(p){
@@ -236,7 +227,7 @@ function setBSID(bsid) {
             }
         });
       }).timeout(
-    1000, "Bsid operation timed out").then(function(){
+    5000, "Bsid operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -264,7 +255,7 @@ function setInitializationVector(iv) {
             }
         });
       }).timeout(
-    1000, "InitializationVector operation timed out").then(function(){
+    5000, "InitializationVector operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -302,7 +293,7 @@ function send(message, ttl=0) {
             }
         });
       }).timeout(
-    1000, "Send operation timed out").then(function(){
+    5000, "Send operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -326,7 +317,7 @@ function reply(message, replyPrt, ttl=0) {
             }
         });
       }).timeout(
-    1000, "Reply operation timed out").then(function(){
+    5000, "Reply operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -368,9 +359,9 @@ function request(message, ttl=0, timeout=3000, replyCount=1) {
             }
         });
     }).timeout(
-    timeout)
+    5000, "REQ operation timed out")
     .error(function(e) {
-      console.info("Timeout", e);
+      console.info("Timeout!!", e);
     }).then(function(){
       console.info("Request handled");
   });
@@ -394,7 +385,7 @@ function getRTC(message) {
             }
         });
       }).timeout(
-    1000, "RTC GET operation timed out").then(function(){
+    5000, "RTC GET operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);
@@ -416,7 +407,7 @@ function getMAC() {
             }
         });
       }).timeout(
-    1000, "MAC GET operation timed out").then(function(ret){
+    5000, "MAC GET operation timed out").then(function(ret){
       mutex(false);
       return ret;
     }).error(function(e){
@@ -441,7 +432,7 @@ function setRTC(epoch) {
             }
         });
       }).timeout(
-    1000, "RTC SET operation timed out").then(function(){
+    5000, "RTC SET operation timed out").then(function(){
       mutex(false);
     }).error(function(e){
         return Promise.reject(e);

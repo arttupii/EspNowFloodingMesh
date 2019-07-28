@@ -3,6 +3,7 @@ const si = require('./serialInterface');
 var _=require("underscore");
 var simpleMqtt=require("./simpleMqtt");
 const config = require("./config.js")
+let polycrc = require('polycrc')
 
 si.begin(config.usbPort);
 si.receiveCallback(function(replyId, data){
@@ -27,7 +28,14 @@ function setup() {
       return si.getMAC();
   })
   .then(function(mac){
-      return si.setBSID(mac);
+      var crc24 =  polycrc.crc24(new Buffer(mac));
+
+      if(config.mesh.bsid!==crc24 && config.mesh.bsid===0x112233) {
+        console.info("(HOX!!! SET THIS VALUE TO ALL YOUR NODES --> \"const int bsid = 0x%s;\"). Update also config.js!!!", crc24);
+        console.info("Default Bsid is used!!!");
+      }
+      return si.setBSID(config.mesh.bsid);
+
   })
   .then(function(){
     return si.setInitializationVector(config.mesh.initializationVector);

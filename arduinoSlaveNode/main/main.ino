@@ -3,7 +3,7 @@
 
 /********NODE SETUP********/
 const char deviceName[] = "device2";
-
+int bsid = 0x112233;
 #if 1
 #define ESP_NOW_CHANNEL 1
 unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
@@ -38,7 +38,7 @@ void setup() {
   espNowFloodingMesh_secredkey(secredKey);
   espNowFloodingMesh_setAesInitializationVector(iv);
   espNowFloodingMesh_setToMasterRole(false, ttl);
-  espNowFloodingMesh_begin(ESP_NOW_CHANNEL);//, bsid);
+  espNowFloodingMesh_begin(ESP_NOW_CHANNEL, bsid);
 
   espNowFloodingMesh_ErrorDebugCB([](int level, const char *str) {
     Serial.print(level); Serial.println(str); //If you want print some debug prints
@@ -48,7 +48,7 @@ void setup() {
   if (!espNowFloodingMesh_syncWithMasterAndWait()) {
     //Sync failed??? No connection to master????
     Serial.println("No connection to master!!! Reboot");
-    ESP.restart();
+   // ESP.restart();
   }
 
   //Handle MQTT events from master. Do not call publish inside of call back. --> Endless event loop and crash

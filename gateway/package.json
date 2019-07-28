@@ -2,6 +2,7 @@
   "dependencies": {
     "bluebird": "^3.5.5",
     "mqtt": "^3.0.0",
+    "polycrc": "^0.1.0",
     "serialport": "^7.1.5",
     "underscore": "^1.9.1"
   }
