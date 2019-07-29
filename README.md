@@ -1,15 +1,16 @@
-# Arduino EspNow flooding mesh network
+# Arduino EspNow flooding mesh network with mqtt
 
 Includes:
 - Mesh usb adapter codes (for esp32/esp2866).
 - Mesh gateway codes (Convert messages between mesh network and MQTT broker)
-- Slave node codes (Slave node can read sensors, control switches/lights or something else)
+- Slave node example codes (Slave node can read sensors, control switches/lights or something else)
 
 ##### Features:
 - Works on EspNow broadcast
 - Nearly instant connection after poweron
 - Maximum number of slave nodes: unlimited
 - Flooding mesh support
+- a message cache. If a received packet is already found in the cache --> it will not be retransmitted or handled again
 - Mesh nodes use MQTT service (subscribe/publish)
 - Master node (USBAdapter=ESP32 or ESP2866) is connected to RaspberryPi's USB port
 - Each Nodes can communicate with each other
@@ -21,9 +22,8 @@ Includes:
 - Retransmission support
 - Request/Reply support
 - Send and pray support (Send a message to all nodes without reply/ack)
-- Easy to configure (just set channel and secure keys)
-- Simple mqqt interface.
-- Automatic node discovery (You find the detected nodes in cache.json on RaspberryPI)
+- Easy to configure (just set channel, secure keys and bsid)
+- Simple mqqt interface. All nodes can use mqtt services via master node (subsribe,unsubscribe,publish,get).
 - MQTT local cache on raspberry
 - Arduino
 
@@ -84,7 +84,7 @@ SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------Slav
 ###### Slave Node examples
 - PIR-sensor node: https://github.com/arttupii/PirSendorNode
 
-###### Demo video
+###### Early demo video
 - https://youtu.be/tXgNWhqPE14
 
 ###### Mesh usb adapter
@@ -120,7 +120,7 @@ SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------Slav
   ![alt text](https://raw.githubusercontent.com/arttupii/EspNowFloodingMesh/master/pictures/ArduinoAdditionalURLs.png)
 4. Install esp32 dev module 1.0.3-rc1 from Arduino's Boards Manager.
   ![alt text](https://raw.githubusercontent.com/arttupii/EspNowFloodingMesh/master/pictures/ArduinoBoardManager.png)
-5. Flash Usb adapter software (EspNowUsb/EspNowUsb.ino) on esp32/esp2866 (esp32 is the best choice.). (You don't need change any parameters)
+5. Flash Usb adapter software (EspNowUsb/EspNowUsb.ino) on esp32/esp2866 (esp32 is the best choice.). (You don't need to change any parameters)
  - https://github.com/arttupii/EspNowFloodingMesh/tree/master/EspNowUsb
 6. Install mqtt broker, nodejs and npm on RaspberryPi
 ```
@@ -137,6 +137,7 @@ SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------Slav
 8. Modify gateway/config.js file:
   - set secredKey parameter (16 bytes)
   - set initializationVector parameter (16 bytes).
+  - set bsid
 9. Start gateway software on RaspberryPi. .
 ```
       a@labra:~/git/EspNowUsb/gateway/node index.js
@@ -144,7 +145,7 @@ SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------Slav
       Subscribe topic device1/led/value from cache
       Subscribe topic device1/led/set from cache
       reboot
-      Role MASTER, ttl=NaN
+      Role MASTER, ttl=3
       MAC GET
       InitializationVector [178,75,242,247,122,197,236,12,94,31,77,193,174,70,94,117]
       key [0,17,34,51,68,85,102,119,136,153,170,187,204,221,238,255]
@@ -156,7 +157,7 @@ SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------Slav
 10. Open slave node code (arduinoSlaveNode/main/main.ino) and modify deviceName, secredKey, iv and ESP_NOW_CHANNEL paramaters.
   * https://github.com/arttupii/EspNowFloodingMesh/tree/master/arduinoSlaveNode/main
   * deviceName should be unique
-  * secredKey, iv and ESP_NOW_CHANNEL must be match to config.js file on raspberryPi. Otherwise mesh network won't work.
+  * secredKey, iv, bsid and ESP_NOW_CHANNEL must be match to config.js file on raspberryPi. Otherwise mesh network won't work.
   --> Flash slave node
 
 
@@ -171,7 +172,7 @@ const char deviceName[] = "device1";
 unsigned char secredKey[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 unsigned char iv[16] = {0xb2, 0x4b, 0xf2, 0xf7, 0x7a, 0xc5, 0xec, 0x0c, 0x5e, 0x1f, 0x4d, 0xc1, 0xae, 0x46, 0x5e, 0x75};
 const int ttl = 3;
-
+const int bsid = 0x112233;
 /*****************************/
 
 #define LED 1
@@ -199,7 +200,7 @@ void setup() {
   espNowFloodingMesh_secredkey(secredKey);
   espNowFloodingMesh_setAesInitializationVector(iv);
   espNowFloodingMesh_setToMasterRole(false, ttl);
-  espNowFloodingMesh_begin(ESP_NOW_CHANNEL);
+  espNowFloodingMesh_begin(ESP_NOW_CHANNEL, bsid);
 
   espNowFloodingMesh_ErrorDebugCB([](int level, const char *str) {
     Serial.print(level); Serial.println(str); //If you want print some debug prints
@@ -355,70 +356,9 @@ device1/shutter/myrollershutter/value stop
 ***Counter***
 device1/counter/gasMeter/value 23412343252      <--(gasMeter value to outside)
 device1/counter/gasMeter/value 23412343252      <--(gasMeter value to outside)
+
+***Binary***
+device1/bin/data1/value dGVzdA==      <--(Binary data base64)
+device1/bin/data/set dGVzdA==      <--(Binary data base64)
 ```
 
-#### Example messages (USBAdapter)
-##### Initialize mesh network
-```
-<READY;
->ROLE MASTER;
-<ACK;
->IV  SET [10,31,42,53,46,15,36,57,83,19,11,55,14,33,24,51];
-<ACK;
->KEY SET [00,11,22,33,44,55,66,77,88,99,AA,BB,CC,DD,EE,FF];
-<ACK;
->CHANNEL SET 1;
-<ACK;
->INIT;
-<ACK;
-```
-##### Set ttl value for SYNC_TIME messages
-```
-<READY;
->ROLE MASTER 3;
-<ACK;
-```
-##### Reboot usb adapter
-```
->REBOOT;
-<ACK REBOOTING;
-<READY;
-```
-##### Send message with ttl 3
-```
->SEND 3 [11,22,33,44,55,66];
-<ACK;
-```
-##### Request with ttl 3 (nodes/node will send reply with 2314 replyId)
-```
->REQ 3 [11,22,33,44,55,66];
-<ACK 2314;
-```
-##### Reply with ttl 3 and replyId
-```
->REPLY 3 2314 [11,22,33,44,55,66];
-<ACK;
-```
-##### Reply received with 2314 replyId
-```
->REC 2314 [53,4C,41,56,45,20,48,45,4C,4C,4F,20,4D,45,53,53,41,47,45,0];
-```
-##### Message received
-```
-<REC 0 [53,4C,41,56,45,20,48,45,4C,4C,4F,20,4D,45,53,53,41,47,45,0];
-```
-##### Invalid command
-```
-<ABCD;
->NACK INVALID COMMAND;
-```
-##### RTC time SET command (EPOC)
-```
-<RTC SET 23456;
->ACK 23456;
-```
-##### RTC time GET command (EPOC)
-```
-<RTC GET;
->ACK 243495;
-```
