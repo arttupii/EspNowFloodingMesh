@@ -28,7 +28,7 @@ function setup() {
       return si.getMAC();
   })
   .then(function(mac){
-      var crc24 =  polycrc.crc24(new Buffer(mac));
+      var crc24 =  polycrc.crc24(new Buffer(mac))&0xffffff;
 
       if(config.mesh.bsid!==crc24 && config.mesh.bsid===0x112233) {
         console.info("(HOX!!! SET THIS VALUE TO ALL YOUR NODES --> \"const int bsid = 0x%s;\"). Update also config.js!!!", crc24);
