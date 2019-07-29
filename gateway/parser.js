@@ -11,6 +11,8 @@ function parse(line) {
 
     var parameters =[];
 
+    console.info("  Parse: \"%s\"",line);
+
     function p(a){
           if(a=='\\' && controlMark==false) {
             controlMark = true;
@@ -20,7 +22,7 @@ function parse(line) {
             controlMark = false;
             buffer.push(a);
             return;
-          } 
+          }
 
         if(a=='#') {
           commentStarted = true;
@@ -33,7 +35,7 @@ function parse(line) {
           }
           return;
         }
-        
+
         if (a == ' ' || a == '\t' || a == ';') {
             //Handle params
           parameters.push(buffer.join(""));
@@ -61,7 +63,7 @@ function parse(line) {
     }
 
     for(var i=0;i<line.length;i++){
-        p(line[i]);    
+        p(line[i]);
     };
     return parameters;
 }

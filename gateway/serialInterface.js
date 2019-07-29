@@ -44,7 +44,7 @@ parser.on('data', function(line){
 
 function waitAckNack() {
     if(actNackCallback) {
-actNackCallback();
+      actNackCallback();
     }
     return new Promise(function(resolve){
         actNackCallback = resolve;
@@ -95,16 +95,18 @@ function ping() {
 function init() {
     return mutex(true).then(function(done){
     console.info("Init");
-    port.write('INIT;')
+
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
             } {
                reject("INIT FAILED");
             }
-        })
+        });
+        port.write('INIT;')
+        return ret;
       }).timeout(
     5000, "Init operation timed out").then(function(){
       mutex(false);
@@ -122,9 +124,8 @@ function role(role, ttl) {
     }
     console.info("Role %s, ttl=%d", role, ttl);
 
-    port.write('ROLE ' + role + " " + ttl + ";")
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
@@ -132,6 +133,8 @@ function role(role, ttl) {
                reject("ROLE FAILED");
             }
         })
+        port.write('ROLE ' + role + " " + ttl + ";")
+        return ret;
       }).timeout(
     5000, "Role operation timed out").then(function(){
       mutex(false);
@@ -144,9 +147,8 @@ function setChannel(c) {
     return mutex(true).then(function(done){
     console.info("Channel %d;", c);
 
-    port.write("CHANNEL SET " +  c + ";")
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
@@ -154,6 +156,8 @@ function setChannel(c) {
                reject("CHANNEL FAILED");
             }
         })
+        port.write("CHANNEL SET " +  c + ";")
+        return ret;
       }).timeout(
     5000, "Channel operation timed out").then(function(){
       mutex(false);
@@ -166,9 +170,8 @@ function reboot() {
     return mutex(true).then(function(done){
     console.info("reboot");
 
-    port.write("REBOOT;");
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
@@ -176,6 +179,8 @@ function reboot() {
                reject("REBOOT FAILED");
             }
         });
+        port.write("REBOOT;");
+        return ret;
       }).timeout(
     3000, "Reboot operation timed out").then(function(){
       mutex(false);
@@ -190,12 +195,10 @@ function setKey(key) {
 
     if(key.length!==16) return Promise.reject("Invalid key size");
 
-    port.write("KEY SET [" + _.map(key,function(a){
-        return a.toString(16).toUpperCase();
-    }).join(",")+"];");
+
 
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
@@ -203,6 +206,10 @@ function setKey(key) {
                reject("KEY FAILED");
             }
         });
+        port.write("KEY SET [" + _.map(key,function(a){
+            return a.toString(16).toUpperCase();
+        }).join(",")+"];");
+        return ret;
       }).timeout(
     5000, "Key operation timed out").then(function(){
       mutex(false);
@@ -216,9 +223,8 @@ function setBSID(bsid) {
 
     console.info("SET BSID---> 0x%s", bsid.toString(16));
 
-    port.write("BSID SET " + bsid + ";");
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
@@ -226,6 +232,8 @@ function setBSID(bsid) {
                reject("bsid FAILED");
             }
         });
+        port.write("BSID SET " + bsid + ";");
+        return ret;
       }).timeout(
     5000, "Bsid operation timed out").then(function(){
       mutex(false);
@@ -241,12 +249,9 @@ function setInitializationVector(iv) {
 
     if(iv.length!==16) return Promise.reject("Invalid key size");
 
-    port.write("IV SET [" + _.map(iv,function(a){
-        return a.toString(16).toUpperCase();
-    }).join(",")+"];");
 
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
@@ -254,6 +259,11 @@ function setInitializationVector(iv) {
                reject("KEY FAILED");
             }
         });
+        port.write("IV SET [" + _.map(iv,function(a){
+            return a.toString(16).toUpperCase();
+        }).join(",")+"];");
+
+        return ret;
       }).timeout(
     5000, "InitializationVector operation timed out").then(function(){
       mutex(false);
@@ -282,9 +292,8 @@ function send(message, ttl=0) {
     var j = convertToBinaryArray(message);
     console.info("send ttl=%d, %s", ttl, j);
 
-    port.write("SEND " + ttl +" [" + j +"];");
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret  = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
@@ -292,6 +301,8 @@ function send(message, ttl=0) {
                reject("SEND FAILED");
             }
         });
+        port.write("SEND " + ttl +" [" + j +"];");
+        return ret;
       }).timeout(
     5000, "Send operation timed out").then(function(){
       mutex(false);
@@ -306,9 +317,8 @@ function reply(message, replyPrt, ttl=0) {
     var j = convertToBinaryArray(message);
     console.info("send ttl=%d, %s", ttl, j);
 
-    port.write("REPLY " + ttl + " " + +replyPrt + " [" + j +"];");
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve();
@@ -316,6 +326,8 @@ function reply(message, replyPrt, ttl=0) {
                reject("SEND FAILED");
             }
         });
+        port.write("REPLY " + ttl + " " + +replyPrt + " [" + j +"];");
+        return ret;
       }).timeout(
     5000, "Reply operation timed out").then(function(){
       mutex(false);
@@ -325,12 +337,11 @@ function reply(message, replyPrt, ttl=0) {
 });
 }
 
-function request(message, ttl=0, timeout=3000, replyCount=1) {
+function request(message, ttl=0, timeout=3000, wantedReplyCount=1) {
     var ret;
     return mutex(true).then(function(){
     console.info("request ttl=%d, %j", ttl, message);
     var replyId;
-    port.write("REQ " + ttl +" [" + convertToBinaryArray(message) +"];");
     return new Promise(function(resolve, reject){
         waitAckNack()
         .error(function(){})
@@ -346,9 +357,9 @@ function request(message, ttl=0, timeout=3000, replyCount=1) {
                   data: [],
                   add: function(a){
                     this.data.push(a);
-                    replyCount--;
+                    wantedReplyCount--;
                     ret = this.data;
-                    if(replyCount<=0){
+                    if(wantedReplyCount<=0){
                       resolve(this.data);
                     }
                   }
@@ -358,9 +369,11 @@ function request(message, ttl=0, timeout=3000, replyCount=1) {
                reject("SEND FAILED");
             }
         });
+        port.write("REQ " + ttl +" [" + convertToBinaryArray(message) +"];");
     }).timeout(
     5000, "REQ operation timed out")
     .error(function(e) {
+      console.info("MESSAGE!!!:", message);
       console.info("Timeout!!", e);
     }).then(function(){
       console.info("Request handled");
@@ -374,9 +387,8 @@ function getRTC(message) {
     return mutex(true).then(function(done){
     console.info("RTC GET");
 
-    port.write("RTC GET;");
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve(parseInt(p[1]));
@@ -384,6 +396,9 @@ function getRTC(message) {
                reject("RTC GET FAILED");
             }
         });
+        port.write("RTC GET;");
+
+        return ret;
       }).timeout(
     5000, "RTC GET operation timed out").then(function(){
       mutex(false);
@@ -396,9 +411,8 @@ function getMAC() {
     return mutex(true).then(function(done){
     console.info("MAC GET");
 
-    port.write("MAC;");
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve(p[1]);
@@ -406,6 +420,8 @@ function getMAC() {
                reject("MAC GET FAILED");
             }
         });
+        port.write("MAC;");
+        return ret;
       }).timeout(
     5000, "MAC GET operation timed out").then(function(ret){
       mutex(false);
@@ -421,9 +437,8 @@ function setRTC(epoch) {
     epoch = parseInt(epoch);
     console.info("RTC %d", epoch);
 
-    port.write("RTC SET " + epoch +";");
     return new Promise(function(resolve, reject){
-        return waitAckNack()
+        var ret = waitAckNack()
         .then(function(p){
             if(p[0]==="ACK") {
                 resolve(parseInt(p[1]));
@@ -431,6 +446,8 @@ function setRTC(epoch) {
                reject("RTC SET FAILED");
             }
         });
+        port.write("RTC SET " + epoch +";");
+        return ret;
       }).timeout(
     5000, "RTC SET operation timed out").then(function(){
       mutex(false);
