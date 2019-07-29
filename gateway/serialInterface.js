@@ -338,49 +338,52 @@ function reply(message, replyPrt, ttl=0) {
 }
 
 function request(message, ttl=0, timeout=3000, wantedReplyCount=1) {
-    var ret;
-    return mutex(true).then(function(){
-    console.info("request ttl=%d, %j", ttl, message);
-    var replyId;
-    return new Promise(function(resolve, reject){
-        waitAckNack()
-        .error(function(){})
-        .then(function(r){
-          mutex(false);
-          return r;
-        })
-        .then(function(p){
-          replyId = p[1];
+  function reqSend(){
+        var ret;
+        return mutex(true).then(function(){
+        console.info("request ttl=%d, %j", ttl, message);
+        var replyId;
+        return new Promise(function(resolve, reject){
+            waitAckNack()
+            .error(function(){})
+            .then(function(r){
+              mutex(false);
+              return r;
+            })
+            .then(function(p){
+              replyId = p[1];
 
-            if(p[0]==="ACK") {
-                replyIdDB[replyId] = {
-                  data: [],
-                  add: function(a){
-                    this.data.push(a);
-                    wantedReplyCount--;
-                    ret = this.data;
-                    if(wantedReplyCount<=0){
-                      resolve(this.data);
-                    }
-                  }
-                };
-                console.info("Wait all Replies with replyId: " + p[1]);
-            } else {
-               reject("SEND FAILED");
-            }
-        });
-        port.write("REQ " + ttl +" [" + convertToBinaryArray(message) +"];");
-    }).timeout(
-    5000, "REQ operation timed out")
-    .error(function(e) {
-      console.info("MESSAGE!!!:", message);
-      console.info("Timeout!!", e);
+                if(p[0]==="ACK") {
+                    replyIdDB[replyId] = {
+                      data: [],
+                      add: function(a){
+                        this.data.push(a);
+                        wantedReplyCount--;
+                        ret = this.data;
+                        if(wantedReplyCount<=0){
+                          resolve(this.data);
+                        }
+                      }
+                    };
+                    console.info("Wait all Replies with replyId: " + p[1]);
+                } else {
+                   reject("SEND FAILED");
+                }
+            });
+            port.write("REQ " + ttl +" [" + convertToBinaryArray(message) +"];");
+        }).timeout(
+        3000, "REQ operation timed out")
+        .error(function(e) {
+          console.info("MESSAGE!!!:", message);
+          console.info("Timeout!!", e);
+        }).then(function(){
+          console.info("Request handled");
+      });
     }).then(function(){
-      console.info("Request handled");
-  });
-}).then(function(){
-  return ret;
-});
+      return ret;
+    });
+  }
+  return reqSend();
 }
 
 function getRTC(message) {
