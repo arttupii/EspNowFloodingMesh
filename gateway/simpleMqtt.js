@@ -67,10 +67,13 @@ function updateValueMqttCache(shortTopic, value) {
   writeChacheFile();
 }
 function isSubscribedMqttCache(shortTopic) {
+  console.info("isSubscribedMqttCache shortTopic:%s",shortTopic);
+
   initMqttCacheObject(shortTopic);
   return mqttCache[shortTopic].subscribedBy.length>0;
 }
 function addSubscriber(shortTopic, deviceName) {
+  console.info("addSubscriber shortTopic:%s",shortTopic);
   initMqttCacheObject(shortTopic);
   mqttCache[shortTopic].subscribedBy.push(deviceName);
   mqttCache[shortTopic].subscribedBy = _.uniq(mqttCache[shortTopic].subscribedBy);
@@ -186,7 +189,7 @@ function parse(replyId, data) {
           console.info("Unsubscribe ", config.mqtt.root+shortTopic);
           deleteSubscriber(shortTopic, deviceName);
         }
-        updateErrorMqttCache(s[1], "OK");
+        updateErrorMqttCache(shortTopic, "OK");
       }
   });
   if(parseInt(replyId)>0) {
