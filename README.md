@@ -75,6 +75,10 @@ SlaveNode-------SlaveNode-------------SlaveNode-------SlaveNode-------------Slav
    |               |                     |
    +-----------SlaveNode-----------------+
 ```        
+###### Message relay
+The Master sends a request to the farthest node and the farthest node replies.
+![alt text](https://raw.githubusercontent.com/arttupii/EspNowFloodingMesh/master/pictures/messageRelay.gif)
+
 ###### Arduino libraries:
 - https://github.com/arttupii/espNowFloodingMeshLibrary
 - https://github.com/arttupii/ArduinoCommands
