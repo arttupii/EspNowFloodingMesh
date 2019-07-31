@@ -1,4 +1,4 @@
-# Arduino EspNow flooding mesh network with mqtt
+# Arduino EspNow managed flooding mesh network with mqtt
 
 Includes:
 - Mesh usb adapter codes (for esp32/esp2866).
