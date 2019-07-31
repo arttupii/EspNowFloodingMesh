@@ -4,18 +4,29 @@ var _=require("underscore");
 var simpleMqtt=require("./simpleMqtt");
 const config = require("./config.js")
 let polycrc = require('polycrc')
-
+var initialized = false;
 si.begin(config.usbPort);
-si.receiveCallback(function(replyId, data){
+si.receiveCallback(function(replyId, data, err){
+    if(err==="REBOOT") {
+ 	if(initialized) {
+	   setup();
+        }
+	return;
+    }
     console.info("Received: %j", data);
     simpleMqtt.parse(replyId, data);
 });
-
+var rtcInterval=false;
 function setup() {
+  initialized = false;
+
+  if(rtcInterval===false) {
   setInterval(function(){
       var epoch = (new Date).getTime()/1000;
       si.setRTC(epoch);
    }, 5*60*1000);
+   rtcInterval=true;
+   }
 
   return Promise.delay(1000)
   .then(function(){
@@ -50,6 +61,7 @@ function setup() {
       return si.init();
   })
   .then(function(){
+      initialized=true;
       return si.setRTC((new Date).getTime()/1000).delay(3000);
   }).catch(function(e){
     console.info(e);

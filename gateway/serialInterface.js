@@ -26,6 +26,10 @@ parser.on('data', function(line){
             actNackCallback(parameters);
         }
     }
+    if(line.indexOf("READY;")!==-1) {
+	console.info("Reboot detected!!!");
+	callback(0,0,"REBOOT");
+    }
     if(parameters[0]==="REC"){
         if(parameters[1]==0) {
             //Normal message
