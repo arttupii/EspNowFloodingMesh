@@ -197,11 +197,16 @@ function parse(replyId, data) {
     console.info("MQTT: Ack requested by client...");
     var msg = "";
     _.forEach(subscribedTopics, function(t){
-      if(mqttCache.hasOwnProperty(t)) {
-        var value = mqttCache[t].value;
-        msg=generateDataUpdateMsg(t, value, msg);
+      if(!t.match(/.*\/trigger\/.*\/value$/)){
+        if(mqttCache.hasOwnProperty(t)) {
+          var value = mqttCache[t].value;
+          msg=generateDataUpdateMsg(t, value, msg);
+        }
       }
     });
+    if(msg==="") {
+      msg = "MQTT MASTER\n";
+    }
     console.info("Send ack to client. ReplyId=%d, msg\"%s\"", replyId, msg);
     si.reply(msg, replyId, config.mesh.ttl);
   }
