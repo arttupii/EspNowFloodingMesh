@@ -320,8 +320,7 @@ device1/humidity/bedroom/value 55        <--percentage
 device1/temp/thermostat1/set 21.2  <--Set thermostat
 
 ***TRIGGER***
-device1/trigger/pirSensor1/value "on" <--Trigger to outside. For example pulse from pir-sensor.
-device1/trigger/pirSensor1/value "off" <--Trigger to outside. For example pulse from pir-sensor
+device1/trigger/pirSensor1/value "triggered" <--Trigger to outside. For example pulse from pir-sensor.
 
 ***CONTACT***
 device1/contact/switch1/value open
