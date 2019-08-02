@@ -143,12 +143,34 @@ client.on('message', function (topic, message) {
 
 
 function parse(replyId, data) {
+  function decompressTopic(topic) {
+    if(topic[0]!==".") {
+        this.t = topic;
+        return topic;
+    }
+    var pCount=0;
+    for(pCount;topic[pCount]==='.';pCount++);
+    var slitIndex = 0;
+
+    for(var i=0;i<t.length;i++) {
+        if(this.t[i]==="/") {
+            slitIndex++;
+        }
+        if(slitIndex===pCount) {
+            slitIndex=i;
+            break;
+        }
+    }
+    return t.substring(0,slitIndex)+topic.substring(pCount);
+}
+
   var str = _.map(data,function(c){
     return String.fromCharCode(c);
   }).join("");
   var deviceName = "";
 
-  console.info("Parse: ", str);
+  console.info("Parse: \"%s\"", str);
+
 
   if(str.indexOf("MQTT")===0) {
     var subscribedTopics = []
@@ -167,7 +189,7 @@ function parse(replyId, data) {
           if(e==-1) {
             e = s[1].length;
           }
-          shortTopic = s[1].substring(0,e);
+          shortTopic = decompressTopic(s[1].substring(0,e));
           value = s[1].substring(s[1].indexOf(" ")+1);
         }
         if(s[0]==="S") {
@@ -208,6 +230,7 @@ function parse(replyId, data) {
       msg = "MQTT MASTER\n";
     }
     console.info("Send ack to client. ReplyId=%d, msg\"%s\"", replyId, msg);
+
     si.reply(msg, replyId, config.mesh.ttl);
   }
 }
