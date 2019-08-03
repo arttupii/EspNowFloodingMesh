@@ -205,6 +205,10 @@ function parse(replyId, data) {
         }
         if(s[0]==="P") {
           client.publish(config.mqtt.root+shortTopic,value);
+          if(t.match(/.*\/trigger\/.*\/value$/)){
+            client.publish(config.mqtt.root+shortTopic,"");
+            value="";
+          }
           updateValueMqttCache(shortTopic, value);
         }
         if(s[0]==="U") { //Unsubscribe
