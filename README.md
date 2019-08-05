@@ -166,6 +166,7 @@ The Master sends a request to the farthest node and the farthest node replies.
 
 
 ###### Slave node code example
+Slave node updates the button's state to topic device1/switch/led/value. The led state can be controlled with topic device1/switch/led/set on/off.
 ```c++
 #include <EspNowFloodingMesh.h>
 #include<SimpleMqtt.h>
