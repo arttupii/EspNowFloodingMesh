@@ -102,14 +102,7 @@ The Master sends a request to the farthest node and the farthest node replies.
 ###### MeshGateway software for RaspberryPi (conversation between mesh and mqtt broker)
  - https://github.com/arttupii/EspNowFloodingMesh/tree/master/gateway
  - See config.js file (https://github.com/arttupii/EspNowUsb/blob/master/RaspberryPiServer/config.js)
-```   
-      cd gateway
-      curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-      sudo apt-get install mosquitto nodejs npm
-      nano config.js
-      npm install
-      node index.js
-```
+
 
 ##### Installation
 0. Install Arduino and following dependencies:
