@@ -129,6 +129,7 @@ The Master sends a request to the farthest node and the farthest node replies.
  - https://github.com/arttupii/EspNowFloodingMesh/tree/master/EspNowUsb
 6. Install mqtt broker, nodejs and npm on RaspberryPi
 ```
+      curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
       sudo apt-get install mosquitto nodejs npm
 ```
 7. Get gateway and install npm modules
