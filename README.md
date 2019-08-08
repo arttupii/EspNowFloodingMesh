@@ -86,7 +86,7 @@ The Master sends a request to the farthest node and the farthest node replies.
 - https://github.com/kakopappa/arduino-esp8266-aes-lib (Only ESP2866)
 
 ###### Slave Node examples
-- PIR-sensor node: https://github.com/arttupii/PirSendorNode
+- PIR-sensor node: https://github.com/arttupii/PirSensorNode
 - Relay switch node: https://github.com/arttupii/mesh-relay
 - Temperature sensor node: https://github.com/arttupii/mesh-dallas
 
