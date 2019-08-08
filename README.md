@@ -87,6 +87,8 @@ The Master sends a request to the farthest node and the farthest node replies.
 
 ###### Slave Node examples
 - PIR-sensor node: https://github.com/arttupii/PirSendorNode
+- Relay switch node: https://github.com/arttupii/mesh-relay
+- Temperature sensor node: https://github.com/arttupii/mesh-dallas
 
 ###### Early demo video
 - https://youtu.be/tXgNWhqPE14
