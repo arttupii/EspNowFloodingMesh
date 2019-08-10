@@ -19,12 +19,6 @@ const int ttl = 3;
 
 SimpleMQTT simpleMqtt = SimpleMQTT(ttl, deviceName);
 
-void espNowFloodingMeshRecv(const uint8_t *data, int len, uint32_t replyPrt) {
-  if (len > 0) {
-    simpleMqtt.parse(data, len, replyPrt); //Parse simple Mqtt protocol messages
-  }
-}
-
 bool setLed;
 bool ledValue;
 void setup() {
@@ -32,9 +26,7 @@ void setup() {
 
   //pinMode(LED, OUTPUT);
   //pinMode(BUTTON_PIN, INPUT_PULLUP);
-
-  //Set device in AP mode to begin with
-  espNowFloodingMesh_RecvCB(espNowFloodingMeshRecv);
+  
   espNowFloodingMesh_secredkey(secredKey);
   espNowFloodingMesh_setAesInitializationVector(iv);
   espNowFloodingMesh_setToMasterRole(false, ttl);
