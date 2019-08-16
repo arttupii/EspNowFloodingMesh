@@ -89,7 +89,7 @@ The Master sends a request to the farthest node and the farthest node replies.
 - PIR-sensor node: https://github.com/arttupii/PirSensorNode
 - Relay switch node: https://github.com/arttupii/mesh-relay
 - Temperature sensor node: https://github.com/arttupii/mesh-dallas
-
+- Four channel relay (+reed switch) node: https://github.com/arttupii/FourChannelRelay
 ###### Early demo video
 - https://youtu.be/tXgNWhqPE14
 
