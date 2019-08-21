@@ -26,10 +26,8 @@ Includes:
 - Simple mqqt interface. All nodes can use mqtt services via master node (subsribe,unsubscribe,publish,get).
 - MQTT local cache on raspberry
 - Arduino
-- Additional mode deviceToDevice: Possible to use mesh network without master node or without connection to mqtt broker (Decreases security, but you can communicate without master and without timesync)
 
 ```
-Normal mode with master
  ____________________________________
 (                                    )
 |                                    |
@@ -52,22 +50,7 @@ Normal mode with master
                                    |  +------------+                     |
                                    +-------------------------------------+
 ```     
-```
-Device to device mode 
- - Disables time difference checking
- - Decreases security, but you can communicate without master and without timesync
- - Mqtt events works between devices (You can use simple mqttlibrary to communicating between devices) 
- - Just call espNowFloodingMesh_disableTimeDifferenceCheck() and remove line "espNowFloodingMesh_syncWithMasterAndWait()"
-+-------------------------------------+
-|    ESPNOW mesh network              |
-|                             Node6   |
-|     Node1        Node3              |
-|                   Node3     Node5   |
-|                           Node4     |
-|                  NodeX    Node7     |
-|                                     |
-+-------------------------------------+
-```     
+     
 ## Flooding mesh network
 In this network example ttl must be >= 5
 ```
