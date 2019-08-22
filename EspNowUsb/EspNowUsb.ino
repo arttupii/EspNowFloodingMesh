@@ -38,6 +38,9 @@ void setup() {
       cmd.send("INFO", str);
     }
   });
+  Serial.println();
+  Serial.println();
+  Serial.println();
   cmd.send("READY");
 }
 
